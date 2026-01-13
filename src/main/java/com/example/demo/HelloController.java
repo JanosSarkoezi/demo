@@ -111,22 +111,26 @@ public class HelloController {
         });
 
         c.setOnMouseDragged(e -> {
-            // Neue Position berechnen
+            // 1. Die aktuelle Position des Cursors plus den Klick-Offset
             double newX = e.getX() + offset[0];
             double newY = e.getY() + offset[1];
 
             double radius = c.getRadius();
 
-            // --- Clamping im lokalen Group-Koordinatensystem ---
-            double maxX = drawingCanvas.getWidth() / zoomTransform.getX() - radius;
-            double maxY = drawingCanvas.getHeight() / zoomTransform.getY() - radius;
+            // 2. Umrechnung: Wo liegen die Ecken des sichtbaren Bereichs (drawingCanvas)
+            // innerhalb der skalierten und verschobenen zoomGroup?
+            Point2D topLeftVisible = zoomGroup.parentToLocal(0, 0);
+            Point2D bottomRightVisible = zoomGroup.parentToLocal(drawingCanvas.getWidth(), drawingCanvas.getHeight());
 
-            double minX = radius;
-            double minY = radius;
+            // 3. Dynamische Grenzen basierend auf dem aktuellen Sichtfeld
+            double minX = topLeftVisible.getX() + radius;
+            double minY = topLeftVisible.getY() + radius;
+            double maxX = bottomRightVisible.getX() - radius;
+            double maxY = bottomRightVisible.getY() - radius;
 
+            // 4. Clamping (Begrenzung)
             if (newX < minX) newX = minX;
             if (newX > maxX) newX = maxX;
-
             if (newY < minY) newY = minY;
             if (newY > maxY) newY = maxY;
 
@@ -137,7 +141,7 @@ public class HelloController {
         return c;
     }
 
-    private static EventHandler<DragEvent> getOnDragOver() {
+    private EventHandler<DragEvent> getOnDragOver() {
         return event -> {
             if (event.getDragboard().hasString()) {
                 event.acceptTransferModes(TransferMode.COPY);
