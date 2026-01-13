@@ -23,10 +23,9 @@ public class HelloController {
 
     @FXML
     public void initialize() {
-        // --- 1. SCHUTZ & HINTERGRUND ---
-        // WICHTIG: Ein Hintergrund ist nötig, damit das Canvas Events fängt!
-        drawingCanvas.setStyle("-fx-background-color: #f4f4f4;"); // Hellgrauer Hintergrund
-
+        // --- 1. SETUP: HIERARCHIE & CLIPPING ---
+        // Die zoomGroup kommt in das drawingCanvas.
+        // So bleibt das Koordinatensystem des Canvas stabil, während der Inhalt skaliert.
         drawingCanvas.getChildren().add(zoomGroup);
         zoomGroup.getTransforms().add(zoomTransform);
 
@@ -35,48 +34,21 @@ public class HelloController {
         clip.heightProperty().bind(drawingCanvas.heightProperty());
         drawingCanvas.setClip(clip);
 
-        // --- 2. DRAG & DROP ---
+        // --- 2. EVENTS ---
         circleTool.setOnDragDetected(getNewCircle());
         drawingCanvas.setOnDragOver(getOnDragOver());
         drawingCanvas.setOnDragDropped(getOnDragDropped());
 
-        // --- 3. ZOOM-LOGIK (VERBESSERT) ---
-        // Wir nutzen addEventFilter, um sicherzugehen, dass das Event ankommt
-        drawingCanvas.addEventFilter(ScrollEvent.SCROLL, event -> {
-            // Überprüfung: Scrollst du mit oder ohne STRG?
-            // Ich nehme die STRG-Abfrage mal raus oder mache sie optional,
-            // damit du sofort siehst, ob es klappt.
-
-            double deltaY = event.getDeltaY();
-            if (deltaY == 0.0) return;
-            System.out.println(" deltaY " + deltaY);
-            double zoomFactor = (deltaY > 0) ? 1.1 : 0.9;
-
-            double oldScaleX = zoomTransform.getX();
-            double oldScaleY = zoomTransform.getY();
-            double newScaleX = oldScaleX * zoomFactor;
-            double newScaleY = oldScaleY * zoomFactor;
-
-            System.out.println("[" + oldScaleX + ", " + oldScaleY + "] [" + newScaleX + ", " + newScaleY + "] " );
-
-            if (newScaleX > 0.1 && newScaleX < 10.0) {
-                // Pivot-Punkt ist die Mausposition relativ zum Canvas
-                zoomTransform.setPivotX(event.getX());
-                zoomTransform.setPivotY(event.getY());
-
-                zoomTransform.setX(newScaleX);
-                zoomTransform.setY(newScaleY);
-            }
-
-            // Verhindert, dass das Scrollen das ganze Fenster bewegt
-            event.consume();
-        });
+        // Scrollen auf dem drawingCanvas (dem stabilen Rahmen) hören
+        drawingCanvas.setOnScroll(getScrollEventEventHandler());
     }
 
     private EventHandler<ScrollEvent> getScrollEventEventHandler() {
         return event -> {
             if (event.isControlDown()) {
-                double zoomFactor = (event.getDeltaY() > 0) ? 2.0 : 0.9;
+                double deltaY = event.getDeltaY();
+                if (deltaY == 0.0) return;
+                double zoomFactor = ( deltaY> 0) ? 1.1 : 0.9;
 
                 double newScaleX = zoomTransform.getX() * zoomFactor;
                 double newScaleY = zoomTransform.getY() * zoomFactor;
@@ -85,8 +57,8 @@ public class HelloController {
                 if (newScaleX > 0.2 && newScaleX < 10.0) {
                     // WICHTIG: Pivot auf die aktuelle Mausposition setzen
                     // Da wir das Event vom drawingCanvas erhalten, sind event.getX/Y stabil.
-                    //zoomTransform.setPivotX(event.getX());
-                    //zoomTransform.setPivotY(event.getY());
+                    zoomTransform.setPivotX(event.getX());
+                    zoomTransform.setPivotY(event.getY());
 
                     zoomTransform.setX(newScaleX);
                     zoomTransform.setY(newScaleY);
@@ -145,7 +117,7 @@ public class HelloController {
         return c;
     }
 
-    private EventHandler<DragEvent> getOnDragOver() {
+    private static EventHandler<DragEvent> getOnDragOver() {
         return event -> {
             if (event.getDragboard().hasString()) {
                 event.acceptTransferModes(TransferMode.COPY);
