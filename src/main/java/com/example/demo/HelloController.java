@@ -1,162 +1,82 @@
 package com.example.demo;
 
-import javafx.event.EventHandler;
+import com.example.demo.util.CanvasCamera;
+import com.example.demo.util.DraggableCircle;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.input.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.transform.Scale;
 
 public class HelloController {
 
     @FXML private StackPane circleTool;
     @FXML private Pane drawingCanvas;
 
-    // Ein Container für alle gezeichneten Objekte, der skaliert wird
     private final Group zoomGroup = new Group();
-    private final Scale zoomTransform = new Scale(1, 1, 0,0);
+    private CanvasCamera camera;
 
     @FXML
     public void initialize() {
-        // --- 1. SETUP: HIERARCHIE & CLIPPING ---
-        // Die zoomGroup kommt in das drawingCanvas.
-        // So bleibt das Koordinatensystem des Canvas stabil, während der Inhalt skaliert.
+        // 1. Hierarchie & Kamera Setup
         drawingCanvas.getChildren().add(zoomGroup);
-        zoomGroup.getTransforms().add(zoomTransform);
+        camera = new CanvasCamera(drawingCanvas, zoomGroup);
 
+        // 2. Clipping (Damit Inhalte nicht über den Rand ragen)
         Rectangle clip = new Rectangle();
         clip.widthProperty().bind(drawingCanvas.widthProperty());
         clip.heightProperty().bind(drawingCanvas.heightProperty());
         drawingCanvas.setClip(clip);
 
-        // --- 2. EVENTS ---
-        circleTool.setOnDragDetected(getNewCircle());
-        drawingCanvas.setOnDragOver(getOnDragOver());
-        drawingCanvas.setOnDragDropped(getOnDragDropped());
+        // 3. Canvas Events (Zoom & Panning)
+        drawingCanvas.setOnScroll(camera::handleZoom);
 
-        // Scrollen auf dem drawingCanvas (dem stabilen Rahmen) hören
-        drawingCanvas.setOnScroll(getScrollEventEventHandler());
-    }
-
-    private EventHandler<ScrollEvent> getScrollEventEventHandler() {
-        return event -> {
-            double deltaY = event.getDeltaY();
-            // Zoom nur mit gedrückter Strg-Taste (wie in deinem Code)
-            if (deltaY == 0.0 || !event.isControlDown()) return;
-
-            double zoomFactor = (deltaY > 0) ? 1.1 : 0.9;
-            double oldScale = zoomTransform.getX();
-            double newScale = oldScale * zoomFactor;
-
-            // Zoom-Grenzen einhalten
-            if (newScale > 0.2 && newScale < 10.0) {
-
-                // 1. Mausposition relativ zum drawingCanvas (Parent)
-                double mouseX = event.getX();
-                double mouseY = event.getY();
-
-                // 2. Aktuelle Verschiebung (Translate) abrufen
-                double curTranslateX = zoomGroup.getTranslateX();
-                double curTranslateY = zoomGroup.getTranslateY();
-
-                /* * 3. Die entscheidende Formel:
-                 * Wir berechnen, wie weit die Maus vom Ursprung der Group (inkl. Translation) entfernt ist
-                 * und passen die Translation so an, dass dieser Punkt trotz neuem Scale stabil bleibt.
-                 */
-                zoomGroup.setTranslateX(mouseX - (mouseX - curTranslateX) * zoomFactor);
-                zoomGroup.setTranslateY(mouseY - (mouseY - curTranslateY) * zoomFactor);
-
-                // 4. Den eigentlichen Scale-Wert setzen
-                zoomTransform.setX(newScale);
-                zoomTransform.setY(newScale);
-            }
-            event.consume();
-        };
-    }
-
-    private EventHandler<DragEvent> getOnDragDropped() {
-        return event -> {
-            if ("NEW_CIRCLE".equals(event.getDragboard().getString())) {
-                // Umrechnung: Maus-Position im Fenster -> Position innerhalb der skalierten Group
-                Point2D mouseInScene = new Point2D(event.getSceneX(), event.getSceneY());
-                Point2D mouseInGroup = zoomGroup.sceneToLocal(mouseInScene);
-
-                Circle newCircle = createDraggableCircle(mouseInGroup.getX(), mouseInGroup.getY());
-                zoomGroup.getChildren().add(newCircle);
-            }
-            event.setDropCompleted(true);
-            event.consume();
-        };
-    }
-
-    private Circle createDraggableCircle(double x, double y) {
-        Circle c = new Circle(25, Color.DODGERBLUE);
-        c.setStroke(Color.BLACK);
-        c.setCenterX(x);
-        c.setCenterY(y);
-
-        // Variablen zum Speichern der Klick-Offset-Position
-        final double[] offset = new double[2];
-
-        c.setOnMousePressed(e -> {
-            // Offset merken: Klickposition innerhalb des Kreises
-            offset[0] = c.getCenterX() - e.getX();
-            offset[1] = c.getCenterY() - e.getY();
-            c.toFront(); // Kreis nach vorne
+        drawingCanvas.setOnMousePressed(e -> {
+            drawingCanvas.setCursor(Cursor.CLOSED_HAND);
+            camera.startPan(e);
         });
 
-        c.setOnMouseDragged(e -> {
-            // 1. Die aktuelle Position des Cursors plus den Klick-Offset
-            double newX = e.getX() + offset[0];
-            double newY = e.getY() + offset[1];
+        drawingCanvas.setOnMouseDragged(camera::updatePan);
 
-            double radius = c.getRadius();
+        drawingCanvas.setOnMouseReleased(e -> drawingCanvas.setCursor(Cursor.DEFAULT));
 
-            // 2. Umrechnung: Wo liegen die Ecken des sichtbaren Bereichs (drawingCanvas)
-            // innerhalb der skalierten und verschobenen zoomGroup?
-            Point2D topLeftVisible = zoomGroup.parentToLocal(0, 0);
-            Point2D bottomRightVisible = zoomGroup.parentToLocal(drawingCanvas.getWidth(), drawingCanvas.getHeight());
-
-            // 3. Dynamische Grenzen basierend auf dem aktuellen Sichtfeld
-            double minX = topLeftVisible.getX() + radius;
-            double minY = topLeftVisible.getY() + radius;
-            double maxX = bottomRightVisible.getX() - radius;
-            double maxY = bottomRightVisible.getY() - radius;
-
-            // 4. Clamping (Begrenzung)
-            if (newX < minX) newX = minX;
-            if (newX > maxX) newX = maxX;
-            if (newY < minY) newY = minY;
-            if (newY > maxY) newY = maxY;
-
-            c.setCenterX(newX);
-            c.setCenterY(newY);
-        });
-
-        return c;
+        // 4. Drag & Drop Logik (für neue Kreise)
+        circleTool.setOnDragDetected(this::handleToolDragDetected);
+        drawingCanvas.setOnDragOver(this::handleCanvasDragOver);
+        drawingCanvas.setOnDragDropped(this::handleCanvasDragDropped);
     }
 
-    private EventHandler<DragEvent> getOnDragOver() {
-        return event -> {
-            if (event.getDragboard().hasString()) {
-                event.acceptTransferModes(TransferMode.COPY);
-            }
-            event.consume();
-        };
+    // --- Drag & Drop Handler ---
+
+    private void handleToolDragDetected(MouseEvent event) {
+        Dragboard db = circleTool.startDragAndDrop(TransferMode.COPY);
+        ClipboardContent content = new ClipboardContent();
+        content.putString("NEW_CIRCLE");
+        db.setContent(content);
+        event.consume();
     }
 
-    private EventHandler<MouseEvent> getNewCircle() {
-        return event -> {
-            Dragboard db = circleTool.startDragAndDrop(TransferMode.COPY);
-            ClipboardContent content = new ClipboardContent();
-            content.putString("NEW_CIRCLE");
-            db.setContent(content);
-            event.consume();
-        };
+    private void handleCanvasDragOver(DragEvent event) {
+        if (event.getDragboard().hasString()) {
+            event.acceptTransferModes(TransferMode.COPY);
+        }
+        event.consume();
+    }
+
+    private void handleCanvasDragDropped(DragEvent event) {
+        if ("NEW_CIRCLE".equals(event.getDragboard().getString())) {
+            // Umrechnung der Mausposition in das lokale (skalierte) Koordinatensystem
+            Point2D p = zoomGroup.sceneToLocal(event.getSceneX(), event.getSceneY());
+
+            // Neuen DraggableCircle erstellen
+            DraggableCircle circle = new DraggableCircle(p.getX(), p.getY(), 25, Color.DODGERBLUE, drawingCanvas, zoomGroup);
+            zoomGroup.getChildren().add(circle);
+        }
+        event.setDropCompleted(true);
+        event.consume();
     }
 }
