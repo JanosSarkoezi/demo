@@ -19,7 +19,7 @@ public class HelloController {
 
     // Ein Container für alle gezeichneten Objekte, der skaliert wird
     private final Group zoomGroup = new Group();
-    private final Scale zoomTransform = new Scale(1, 1);
+    private final Scale zoomTransform = new Scale(1, 1, 0,0);
 
     @FXML
     public void initialize() {
@@ -46,30 +46,32 @@ public class HelloController {
     private EventHandler<ScrollEvent> getScrollEventEventHandler() {
         return event -> {
             double deltaY = event.getDeltaY();
+            // Zoom nur mit gedrückter Strg-Taste (wie in deinem Code)
             if (deltaY == 0.0 || !event.isControlDown()) return;
 
             double zoomFactor = (deltaY > 0) ? 1.1 : 0.9;
             double oldScale = zoomTransform.getX();
             double newScale = oldScale * zoomFactor;
 
+            // Zoom-Grenzen einhalten
             if (newScale > 0.2 && newScale < 10.0) {
-                // 1. Aktuelle Mausposition (der neue Fixpunkt)
+
+                // 1. Mausposition relativ zum drawingCanvas (Parent)
                 double mouseX = event.getX();
                 double mouseY = event.getY();
 
-                // 2. Mathematische Kompensation:
-                // Wenn wir den Pivot bei einer aktiven Skalierung verschieben,
-                // berechnen wir, wie weit der Inhalt "springen" würde.
-                double shiftX = (mouseX - zoomTransform.getPivotX()) * (newScale/oldScale - 1);
-                double shiftY = (mouseY - zoomTransform.getPivotY()) * (newScale/oldScale - 1);
+                // 2. Aktuelle Verschiebung (Translate) abrufen
+                double curTranslateX = zoomGroup.getTranslateX();
+                double curTranslateY = zoomGroup.getTranslateY();
 
-                // 3. Den Sprung durch Translation ausgleichen
-                zoomGroup.setTranslateX(zoomGroup.getTranslateX() - shiftX);
-                zoomGroup.setTranslateY(zoomGroup.getTranslateY() - shiftY);
+                /* * 3. Die entscheidende Formel:
+                 * Wir berechnen, wie weit die Maus vom Ursprung der Group (inkl. Translation) entfernt ist
+                 * und passen die Translation so an, dass dieser Punkt trotz neuem Scale stabil bleibt.
+                 */
+                zoomGroup.setTranslateX(mouseX - (mouseX - curTranslateX) * zoomFactor);
+                zoomGroup.setTranslateY(mouseY - (mouseY - curTranslateY) * zoomFactor);
 
-                // 4. Jetzt den neuen Pivot und die neue Skalierung setzen
-                zoomTransform.setPivotX(mouseX);
-                zoomTransform.setPivotY(mouseY);
+                // 4. Den eigentlichen Scale-Wert setzen
                 zoomTransform.setX(newScale);
                 zoomTransform.setY(newScale);
             }
@@ -102,25 +104,34 @@ public class HelloController {
         final double[] offset = new double[2];
 
         c.setOnMousePressed(e -> {
-            // Wir merken uns, wo im Kreis wir geklickt haben
+            // Offset merken: Klickposition innerhalb des Kreises
             offset[0] = c.getCenterX() - e.getX();
             offset[1] = c.getCenterY() - e.getY();
-            c.toFront(); // Kreis nach vorne holen
+            c.toFront(); // Kreis nach vorne
         });
 
         c.setOnMouseDragged(e -> {
-            // Da der Kreis Kind der zoomGroup ist, sind e.getX() bereits im skalierten System!
+            // Neue Position berechnen
             double newX = e.getX() + offset[0];
             double newY = e.getY() + offset[1];
 
-            // Optionales Clamping (hier relativ zur ursprünglichen Canvas-Größe)
             double radius = c.getRadius();
-            if (newX >= radius && newX <= drawingCanvas.getWidth() - radius) {
-                c.setCenterX(newX);
-            }
-            if (newY >= radius && newY <= drawingCanvas.getHeight() - radius) {
-                c.setCenterY(newY);
-            }
+
+            // --- Clamping im lokalen Group-Koordinatensystem ---
+            double maxX = drawingCanvas.getWidth() / zoomTransform.getX() - radius;
+            double maxY = drawingCanvas.getHeight() / zoomTransform.getY() - radius;
+
+            double minX = radius;
+            double minY = radius;
+
+            if (newX < minX) newX = minX;
+            if (newX > maxX) newX = maxX;
+
+            if (newY < minY) newY = minY;
+            if (newY > maxY) newY = maxY;
+
+            c.setCenterX(newX);
+            c.setCenterY(newY);
         });
 
         return c;
