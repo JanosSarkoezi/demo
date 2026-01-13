@@ -45,26 +45,35 @@ public class HelloController {
 
     private EventHandler<ScrollEvent> getScrollEventEventHandler() {
         return event -> {
-            if (event.isControlDown()) {
-                double deltaY = event.getDeltaY();
-                if (deltaY == 0.0) return;
-                double zoomFactor = ( deltaY> 0) ? 1.1 : 0.9;
+            double deltaY = event.getDeltaY();
+            if (deltaY == 0.0 || !event.isControlDown()) return;
 
-                double newScaleX = zoomTransform.getX() * zoomFactor;
-                double newScaleY = zoomTransform.getY() * zoomFactor;
+            double zoomFactor = (deltaY > 0) ? 1.1 : 0.9;
+            double oldScale = zoomTransform.getX();
+            double newScale = oldScale * zoomFactor;
 
-                // Grenzen: 20% bis 1000% Zoom
-                if (newScaleX > 0.2 && newScaleX < 10.0) {
-                    // WICHTIG: Pivot auf die aktuelle Mausposition setzen
-                    // Da wir das Event vom drawingCanvas erhalten, sind event.getX/Y stabil.
-                    zoomTransform.setPivotX(event.getX());
-                    zoomTransform.setPivotY(event.getY());
+            if (newScale > 0.2 && newScale < 10.0) {
+                // 1. Aktuelle Mausposition (der neue Fixpunkt)
+                double mouseX = event.getX();
+                double mouseY = event.getY();
 
-                    zoomTransform.setX(newScaleX);
-                    zoomTransform.setY(newScaleY);
-                }
-                event.consume();
+                // 2. Mathematische Kompensation:
+                // Wenn wir den Pivot bei einer aktiven Skalierung verschieben,
+                // berechnen wir, wie weit der Inhalt "springen" würde.
+                double shiftX = (mouseX - zoomTransform.getPivotX()) * (newScale/oldScale - 1);
+                double shiftY = (mouseY - zoomTransform.getPivotY()) * (newScale/oldScale - 1);
+
+                // 3. Den Sprung durch Translation ausgleichen
+                zoomGroup.setTranslateX(zoomGroup.getTranslateX() - shiftX);
+                zoomGroup.setTranslateY(zoomGroup.getTranslateY() - shiftY);
+
+                // 4. Jetzt den neuen Pivot und die neue Skalierung setzen
+                zoomTransform.setPivotX(mouseX);
+                zoomTransform.setPivotY(mouseY);
+                zoomTransform.setX(newScale);
+                zoomTransform.setY(newScale);
             }
+            event.consume();
         };
     }
 
