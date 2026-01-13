@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.demo.HelloController">
+
+    <left>
+        <VBox spacing="15.0" style="-fx-background-color: #f0f0f0; -fx-border-color: #ccc; -fx-border-width: 0 1 0 0;" prefWidth="120.0">
+            <padding>
+                <Insets top="20" right="10" bottom="20" left="10"/>
+            </padding>
+            <Label text="Shapes" style="-fx-font-weight: bold;"/>
+
+            <StackPane fx:id="circleTool" style="-fx-cursor: hand;">
+                <Circle radius="25.0" fill="DODGERBLUE" stroke="BLACK" />
+                <Label text="Circle" mouseTransparent="true"/>
+            </StackPane>
+
+            <StackPane fx:id="rectTool" style="-fx-cursor: hand;">
+                <Rectangle width="50.0" height="50.0" fill="ORANGERED" stroke="BLACK" />
+                <Label text="Rect" mouseTransparent="true" style="-fx-text-fill: white;"/>
+            </StackPane>
+        </VBox>
+    </left>
+
+    <center>
+        <Pane fx:id="drawingCanvas" style="-fx-background-color: white;" prefWidth="800" prefHeight="600"/>
+    </center>
+
+</BorderPane>
