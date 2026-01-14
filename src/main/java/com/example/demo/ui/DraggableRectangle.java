@@ -1,4 +1,4 @@
-package com.example.demo.util;
+package com.example.demo.ui;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
