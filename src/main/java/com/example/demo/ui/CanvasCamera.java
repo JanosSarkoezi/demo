@@ -1,4 +1,4 @@
-package com.example.demo.util;
+package com.example.demo.ui;
 
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;

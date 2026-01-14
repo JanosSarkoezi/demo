@@ -1,8 +1,8 @@
-package com.example.demo;
+package com.example.demo.controller;
 
-import com.example.demo.util.CanvasCamera;
-import com.example.demo.util.DraggableCircle;
-import com.example.demo.util.DraggableRectangle;
+import com.example.demo.ui.CanvasCamera;
+import com.example.demo.ui.DraggableCircle;
+import com.example.demo.ui.DraggableRectangle;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
