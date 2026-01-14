@@ -24,6 +24,14 @@
                 <Rectangle width="50.0" height="50.0" fill="ORANGERED" stroke="BLACK" />
                 <Label text="Rect" mouseTransparent="true" style="-fx-text-fill: white;"/>
             </StackPane>
+
+            <Label text="Settings" style="-fx-font-weight: bold;">
+                <VBox.margin>
+                    <Insets top="20"/>
+                </VBox.margin>
+            </Label>
+
+            <CheckBox fx:id="snapToGridCheckbox" text="Snap to Grid" selected="true" />
         </VBox>
     </left>
 

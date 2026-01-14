@@ -1,5 +1,7 @@
 package com.example.demo.ui;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -23,6 +25,13 @@ public class ShapeTransformHelper {
     private static final double GRID_SPACING = 50.0;
     private static final double MIN_DIMENSION = 10.0;
     private boolean handlesVisible = false;
+
+    // Im ShapeTransformHelper.java
+    private final BooleanProperty snapToGridEnabled = new SimpleBooleanProperty(true);
+
+    public BooleanProperty snapToGridEnabledProperty() {
+        return snapToGridEnabled;
+    }
 
     public ShapeTransformHelper(Shape shape, Pane boundsProvider, Group zoomGroup) {
         this.shape = shape;
@@ -68,24 +77,30 @@ public class ShapeTransformHelper {
         Point2D bottomRight = zoomGroup.parentToLocal(boundsProvider.getWidth(), boundsProvider.getHeight());
 
         if (shape instanceof Rectangle r) {
-            // Snapping: Mitte des Rechtecks am Gitter ausrichten
-            double centerX = x + r.getWidth() / 2;
-            double centerY = y + r.getHeight() / 2;
-            double snappedX = Math.round(centerX / GRID_SPACING) * GRID_SPACING - r.getWidth() / 2;
-            double snappedY = Math.round(centerY / GRID_SPACING) * GRID_SPACING - r.getHeight() / 2;
+            double finalX = x;
+            double finalY = y;
 
-            // Clamping: Ganze Breite/Höhe berücksichtigen
-            r.setX(Math.clamp(snappedX, topLeft.getX(), bottomRight.getX() - r.getWidth()));
-            r.setY(Math.clamp(snappedY, topLeft.getY(), bottomRight.getY() - r.getHeight()));
+            if (snapToGridEnabled.get()) {
+                double centerX = x + r.getWidth() / 2;
+                double centerY = y + r.getHeight() / 2;
+                finalX = Math.round(centerX / GRID_SPACING) * GRID_SPACING - r.getWidth() / 2;
+                finalY = Math.round(centerY / GRID_SPACING) * GRID_SPACING - r.getHeight() / 2;
+            }
+
+            r.setX(Math.clamp(finalX, topLeft.getX(), bottomRight.getX() - r.getWidth()));
+            r.setY(Math.clamp(finalY, topLeft.getY(), bottomRight.getY() - r.getHeight()));
 
         } else if (shape instanceof Circle c) {
-            // Snapping: Zentrum am Gitter ausrichten
-            double snappedX = Math.round(x / GRID_SPACING) * GRID_SPACING;
-            double snappedY = Math.round(y / GRID_SPACING) * GRID_SPACING;
+            double finalX = x;
+            double finalY = y;
 
-            // Clamping: Radius berücksichtigen, damit der Kreis im Bild bleibt
-            c.setCenterX(Math.clamp(snappedX, topLeft.getX() + c.getRadius(), bottomRight.getX() - c.getRadius()));
-            c.setCenterY(Math.clamp(snappedY, topLeft.getY() + c.getRadius(), bottomRight.getY() - c.getRadius()));
+            if (snapToGridEnabled.get()) {
+                finalX = Math.round(x / GRID_SPACING) * GRID_SPACING;
+                finalY = Math.round(y / GRID_SPACING) * GRID_SPACING;
+            }
+
+            c.setCenterX(Math.clamp(finalX, topLeft.getX() + c.getRadius(), bottomRight.getX() - c.getRadius()));
+            c.setCenterY(Math.clamp(finalY, topLeft.getY() + c.getRadius(), bottomRight.getY() - c.getRadius()));
         }
     }
 

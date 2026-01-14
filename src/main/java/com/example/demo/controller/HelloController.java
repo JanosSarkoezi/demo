@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
+import javafx.scene.control.CheckBox;
 import javafx.scene.input.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -15,6 +16,7 @@ import javafx.scene.shape.Rectangle;
 
 public class HelloController {
 
+    @FXML public CheckBox snapToGridCheckbox;
     @FXML private StackPane circleTool;
     @FXML private StackPane rectTool;
     @FXML private Pane drawingCanvas;
@@ -75,9 +77,20 @@ public class HelloController {
         Point2D p = zoomGroup.sceneToLocal(event.getSceneX(), event.getSceneY());
 
         if ("NEW_CIRCLE".equals(toolType)) {
-            zoomGroup.getChildren().add(new DraggableCircle(p.getX(), p.getY(), 25, Color.DODGERBLUE, drawingCanvas, zoomGroup));
+            DraggableCircle circle = new DraggableCircle(p.getX(), p.getY(), 25, Color.DODGERBLUE, drawingCanvas, zoomGroup);
+
+            // BINDUNG: Der Helper des neuen Kreises hört auf die CheckBox
+            circle.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridCheckbox.selectedProperty());
+
+            zoomGroup.getChildren().add(circle);
+
         } else if ("NEW_RECT".equals(toolType)) {
-            zoomGroup.getChildren().add(new DraggableRectangle(p.getX(), p.getY(), 50, 50, Color.RED, drawingCanvas, zoomGroup));
+            DraggableRectangle rect = new DraggableRectangle(p.getX(), p.getY(), 50, 50, Color.RED, drawingCanvas, zoomGroup);
+
+            // BINDUNG: Der Helper des neuen Rechtecks hört auf die CheckBox
+            rect.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridCheckbox.selectedProperty());
+
+            zoomGroup.getChildren().add(rect);
         }
 
         event.setDropCompleted(true);
