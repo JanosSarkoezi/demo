@@ -118,22 +118,37 @@ public class ShapeTransformHelper {
     }
 
     private void showHandles() {
-        String[] positions = (shape instanceof Rectangle)
-                ? new String[]{"NW", "N", "NE", "W", "E", "SW", "S", "SE"}
-                : new String[]{"N", "S", "E", "W"};
-
-        for (String pos : positions) {
-            createHandle(pos);
+        if (shape instanceof Rectangle) {
+            String[] positions = {"NW", "N", "NE", "W", "E", "SW", "S", "SE"};
+            javafx.scene.Cursor[] cursors = {
+                    javafx.scene.Cursor.NW_RESIZE, javafx.scene.Cursor.N_RESIZE, javafx.scene.Cursor.NE_RESIZE,
+                    javafx.scene.Cursor.W_RESIZE,  javafx.scene.Cursor.E_RESIZE,  javafx.scene.Cursor.SW_RESIZE,
+                    javafx.scene.Cursor.S_RESIZE,  javafx.scene.Cursor.SE_RESIZE
+            };
+            for (int i = 0; i < positions.length; i++) {
+                createHandle(positions[i], cursors[i]);
+            }
+        } else if (shape instanceof Circle) {
+            // Bei Kreisen nutzen wir für alle Richtungen den Standard-Resize-Cursor oder ein Fadenkreuz
+            String[] positions = {"N", "S", "E", "W"};
+            javafx.scene.Cursor[] cursors = {
+                    javafx.scene.Cursor.N_RESIZE, javafx.scene.Cursor.S_RESIZE,
+                    javafx.scene.Cursor.E_RESIZE,  javafx.scene.Cursor.W_RESIZE
+            };
+            for (int i = 0; i < positions.length; i++) {
+                createHandle(positions[i], cursors[i]);
+            }
         }
         updateHandlePositions();
     }
 
-    private void createHandle(String pos) {
+    private void createHandle(String pos, javafx.scene.Cursor cursor) {
         Rectangle h = new Rectangle(HANDLE_SIZE, HANDLE_SIZE, Color.WHITE);
         h.setStroke(shape instanceof Circle ? Color.DARKRED : Color.DARKBLUE);
         h.setUserData(pos);
+        h.setCursor(cursor); // Hier wird der Mauszeiger gesetzt
 
-        // Anti-Zoom Skalierung bleibt erhalten
+        // Anti-Zoom Skalierung
         h.scaleXProperty().bind(zoomGroup.scaleXProperty().map(s -> 1.0 / s.doubleValue()));
         h.scaleYProperty().bind(zoomGroup.scaleYProperty().map(s -> 1.0 / s.doubleValue()));
 
