@@ -17,6 +17,7 @@ import javafx.scene.shape.Rectangle;
 public class HelloController {
 
     @FXML public CheckBox snapToGridCheckbox;
+    @FXML public CheckBox stickyCheckbox;
     @FXML private StackPane circleTool;
     @FXML private StackPane rectTool;
     @FXML private Pane drawingCanvas;
@@ -89,6 +90,7 @@ public class HelloController {
 
             // BINDUNG: Der Helper des neuen Rechtecks hört auf die CheckBox
             rect.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridCheckbox.selectedProperty());
+            rect.getTransformHelper().stickyEnabledProperty().bind(stickyCheckbox.selectedProperty());
 
             zoomGroup.getChildren().add(rect);
         }

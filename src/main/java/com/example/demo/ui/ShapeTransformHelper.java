@@ -29,9 +29,14 @@ public class ShapeTransformHelper {
 
     // Im ShapeTransformHelper.java
     private final BooleanProperty snapToGridEnabled = new SimpleBooleanProperty(true);
+    private final BooleanProperty stickyEnabled = new SimpleBooleanProperty(false);
 
     public BooleanProperty snapToGridEnabledProperty() {
         return snapToGridEnabled;
+    }
+
+    public BooleanProperty stickyEnabledProperty() {
+        return stickyEnabled;
     }
 
     public ShapeTransformHelper(Shape shape, Pane boundsProvider, Group zoomGroup) {
@@ -84,6 +89,19 @@ public class ShapeTransformHelper {
         Point2D bottomRight = zoomGroup.parentToLocal(boundsProvider.getWidth(), boundsProvider.getHeight());
 
         if (shape instanceof Rectangle r) {
+            // Sticky Check vor dem Snapping
+            Rectangle target = findTargetOverlap();
+            if (target != null) {
+                double diffX = Math.abs(x - target.getX());
+                double diffY = Math.abs(y - target.getY());
+
+                if (diffX > diffY) {
+                    r.setHeight(target.getHeight());
+                } else {
+                    r.setWidth(target.getWidth());
+                }
+            }
+
             double finalX = x;
             double finalY = y;
 
@@ -146,7 +164,8 @@ public class ShapeTransformHelper {
         Rectangle h = new Rectangle(HANDLE_SIZE, HANDLE_SIZE, Color.WHITE);
         h.setStroke(shape instanceof Circle ? Color.DARKRED : Color.DARKBLUE);
         h.setUserData(pos);
-        h.setCursor(cursor); // Hier wird der Mauszeiger gesetzt
+        h.setCursor(cursor);
+        h.getStyleClass().add("handle");
 
         // Anti-Zoom Skalierung
         h.scaleXProperty().bind(zoomGroup.scaleXProperty().map(s -> 1.0 / s.doubleValue()));
@@ -271,5 +290,19 @@ public class ShapeTransformHelper {
                 dialog.showAndWait().ifPresent(this::updateText);
             }
         });
+    }
+
+    private Rectangle findTargetOverlap() {
+        if (!stickyEnabled.get() || !(shape instanceof Rectangle r)) return null;
+
+        for (javafx.scene.Node other : zoomGroup.getChildren()) {
+            if (other instanceof Rectangle otherRect && otherRect != r
+                    && !otherRect.getStyleClass().contains("handle")) {
+                if (r.getBoundsInParent().intersects(otherRect.getBoundsInParent())) {
+                    return otherRect;
+                }
+            }
+        }
+        return null;
     }
 }

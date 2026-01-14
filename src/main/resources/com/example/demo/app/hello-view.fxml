@@ -32,6 +32,7 @@
             </Label>
 
             <CheckBox fx:id="snapToGridCheckbox" text="Snap to Grid" selected="true" />
+            <CheckBox fx:id="stickyCheckbox" text="Shapes verkleben" />
         </VBox>
     </left>
 
