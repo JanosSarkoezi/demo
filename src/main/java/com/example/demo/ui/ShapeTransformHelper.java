@@ -5,6 +5,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -55,6 +56,10 @@ public class ShapeTransformHelper {
                     anchorY = c.getCenterY() - e.getY();
                 }
                 shape.toFront();
+
+                if (label != null) {
+                    label.toFront();
+                }
             }
             e.consume();
         });
@@ -70,6 +75,8 @@ public class ShapeTransformHelper {
             }
             e.consume();
         });
+
+        setupTextInteraction();
     }
 
     private void applySnappedAndClampedTranslation(double x, double y) {
@@ -198,5 +205,56 @@ public class ShapeTransformHelper {
         zoomGroup.getChildren().removeAll(handleShapes);
         handleShapes.clear();
         handlesVisible = false;
+    }
+
+    private javafx.scene.control.Label label;
+
+    private void updateText(String newText) {
+        if (label == null) {
+            label = new javafx.scene.control.Label(newText);
+            label.setMouseTransparent(true);
+            label.setWrapText(true); // Aktiviert den automatischen Zeilenumbruch
+            label.setAlignment(javafx.geometry.Pos.CENTER); // Text innerhalb des Labels zentrieren
+            label.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+
+            // Hintergrund transparent, damit man nur den Text sieht
+            label.setStyle("-fx-background-color: transparent;");
+
+            if (shape instanceof Rectangle r) {
+                // Bindung der Label-Position an das Rechteck
+                label.layoutXProperty().bind(r.xProperty());
+                label.layoutYProperty().bind(r.yProperty());
+
+                // Bindung der Label-Größe an das Rechteck (mit 5px Puffer an jeder Seite)
+                label.prefWidthProperty().bind(r.widthProperty().subtract(10));
+                label.prefHeightProperty().bind(r.heightProperty().subtract(10));
+
+                // Padding hinzufügen, damit der Text nicht am Rand klebt
+                label.setPadding(new javafx.geometry.Insets(5));
+            } else if (shape instanceof Circle c) {
+                // Bei Kreisen ist ein Quadrat im Inneren die sicherste Zone für Text
+                double side = c.getRadius() * Math.sqrt(2); // Inkreis-Quadrat
+                label.layoutXProperty().bind(c.centerXProperty().subtract(side / 2));
+                label.layoutYProperty().bind(c.centerYProperty().subtract(side / 2));
+                label.prefWidthProperty().bind(javafx.beans.binding.Bindings.createDoubleBinding(
+                        () -> c.getRadius() * Math.sqrt(2), c.radiusProperty()));
+                label.prefHeightProperty().bind(label.prefWidthProperty());
+            }
+
+            zoomGroup.getChildren().add(label);
+        } else {
+            label.setText(newText);
+        }
+    }
+
+    private void setupTextInteraction() {
+        shape.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) { // Doppelklick
+                TextInputDialog dialog = new TextInputDialog(label != null ? label.getText() : "");
+                dialog.setTitle("Text bearbeiten");
+                dialog.setHeaderText("Beschriftung für Shape eingeben:");
+                dialog.showAndWait().ifPresent(this::updateText);
+            }
+        });
     }
 }
