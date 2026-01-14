@@ -37,6 +37,7 @@ public class DraggableRectangle extends Rectangle {
             if (e.isControlDown()) {
                 toggleHandles();
             } else {
+                hideHandles();
                 // Normaler Drag-Start
                 dragAnchorX = getX() - e.getX();
                 dragAnchorY = getY() - e.getY();
@@ -62,6 +63,8 @@ public class DraggableRectangle extends Rectangle {
                 setY(Math.clamp(snappedY, topLeft.getY(), bottomRight.getY() - getHeight()));
 
                 if (handlesVisible) updateHandlePositions();
+
+                checkCollisions();
             }
             e.consume();
         });
@@ -147,5 +150,31 @@ public class DraggableRectangle extends Rectangle {
     private void setH(Rectangle h, double x, double y) {
         h.setX(x - HANDLE_SIZE / 2);
         h.setY(y - HANDLE_SIZE / 2);
+    }
+
+    private void checkCollisions() {
+        boolean isColliding = false;
+
+        for (javafx.scene.Node other : zoomGroup.getChildren()) {
+            // Wir prüfen nur andere Rechtecke und ignorieren uns selbst sowie die Handles
+            if (other instanceof Rectangle && other != this && !(other.getStyleClass().contains("handle"))) {
+
+                // Die magische JavaFX Methode für Kollisionen
+                if (this.getBoundsInParent().intersects(other.getBoundsInParent())) {
+                    isColliding = true;
+                    // Optional: Visuelles Feedback für das getroffene Objekt
+                    ((Rectangle) other).setStroke(Color.RED);
+                } else {
+                    ((Rectangle) other).setStroke(Color.BLACK);
+                }
+            }
+        }
+
+        // Feedback für das gezogene Objekt selbst
+        if (isColliding) {
+            this.setFill(Color.ORANGERED); // Warnfarbe beim Überlagern
+        } else {
+            this.setFill(Color.LIGHTGREEN); // Standardfarbe
+        }
     }
 }
