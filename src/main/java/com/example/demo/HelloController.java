@@ -2,6 +2,7 @@ package com.example.demo;
 
 import com.example.demo.util.CanvasCamera;
 import com.example.demo.util.DraggableCircle;
+import com.example.demo.util.DraggableRectangle;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
@@ -15,6 +16,7 @@ import javafx.scene.shape.Rectangle;
 public class HelloController {
 
     @FXML private StackPane circleTool;
+    @FXML private StackPane rectTool;
     @FXML private Pane drawingCanvas;
 
     private final Group zoomGroup = new Group();
@@ -45,17 +47,18 @@ public class HelloController {
         drawingCanvas.setOnMouseReleased(e -> drawingCanvas.setCursor(Cursor.DEFAULT));
 
         // 4. Drag & Drop Logik (für neue Kreise)
-        circleTool.setOnDragDetected(this::handleToolDragDetected);
+        circleTool.setOnDragDetected(e -> startToolDrag(circleTool, "NEW_CIRCLE", e));
+        rectTool.setOnDragDetected(e -> startToolDrag(rectTool, "NEW_RECT", e));
         drawingCanvas.setOnDragOver(this::handleCanvasDragOver);
         drawingCanvas.setOnDragDropped(this::handleCanvasDragDropped);
     }
 
     // --- Drag & Drop Handler ---
 
-    private void handleToolDragDetected(MouseEvent event) {
-        Dragboard db = circleTool.startDragAndDrop(TransferMode.COPY);
+    private void startToolDrag(StackPane tool, String format, MouseEvent event) {
+        Dragboard db = tool.startDragAndDrop(TransferMode.COPY);
         ClipboardContent content = new ClipboardContent();
-        content.putString("NEW_CIRCLE");
+        content.putString(format);
         db.setContent(content);
         event.consume();
     }
@@ -68,14 +71,15 @@ public class HelloController {
     }
 
     private void handleCanvasDragDropped(DragEvent event) {
-        if ("NEW_CIRCLE".equals(event.getDragboard().getString())) {
-            // Umrechnung der Mausposition in das lokale (skalierte) Koordinatensystem
-            Point2D p = zoomGroup.sceneToLocal(event.getSceneX(), event.getSceneY());
+        String toolType = event.getDragboard().getString();
+        Point2D p = zoomGroup.sceneToLocal(event.getSceneX(), event.getSceneY());
 
-            // Neuen DraggableCircle erstellen
-            DraggableCircle circle = new DraggableCircle(p.getX(), p.getY(), 25, Color.DODGERBLUE, drawingCanvas, zoomGroup);
-            zoomGroup.getChildren().add(circle);
+        if ("NEW_CIRCLE".equals(toolType)) {
+            zoomGroup.getChildren().add(new DraggableCircle(p.getX(), p.getY(), 25, Color.DODGERBLUE, drawingCanvas, zoomGroup));
+        } else if ("NEW_RECT".equals(toolType)) {
+            zoomGroup.getChildren().add(new DraggableRectangle(p.getX(), p.getY(), 50, 50, Color.RED, drawingCanvas, zoomGroup));
         }
+
         event.setDropCompleted(true);
         event.consume();
     }

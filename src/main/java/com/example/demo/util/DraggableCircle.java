@@ -26,6 +26,11 @@ public class DraggableCircle extends Circle {
             double newX = e.getX() + anchorX;
             double newY = e.getY() + anchorY;
 
+            // --- SNAP TO GRID LOGIK ---
+            double gridSpacing = 50.0;
+            newX = Math.round(newX / gridSpacing) * gridSpacing;
+            newY = Math.round(newY / gridSpacing) * gridSpacing;
+
             // Deine Clamping-Logik ist hier sicher "verstaut"
             Point2D topLeft = zoomGroup.parentToLocal(0, 0);
             Point2D bottomRight = zoomGroup.parentToLocal(boundsProvider.getWidth(), boundsProvider.getHeight());
