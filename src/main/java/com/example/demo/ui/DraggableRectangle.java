@@ -14,8 +14,10 @@ public class DraggableRectangle extends Rectangle {
         setY(y);
         setStroke(Color.BLACK);
 
+        RectangleAdapter adapter = new RectangleAdapter(this);
+
         // Die gesamte Logik wird hier delegiert
-        this.transformHelper = new ShapeTransformHelper(this, boundsProvider, zoomGroup);
+        this.transformHelper = new ShapeTransformHelper(adapter, zoomGroup);
     }
 
     public ShapeTransformHelper getTransformHelper() {

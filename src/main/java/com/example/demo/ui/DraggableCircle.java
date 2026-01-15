@@ -14,8 +14,10 @@ public class DraggableCircle extends Circle {
         setCenterY(y);
         setStroke(Color.BLACK);
 
+        CircleAdapter adapter = new CircleAdapter(this);
+
         // Delegierung an den Helper
-        this.transformHelper = new ShapeTransformHelper(this, boundsProvider, zoomGroup);
+        this.transformHelper = new ShapeTransformHelper(adapter, zoomGroup);
     }
 
     public ShapeTransformHelper getTransformHelper() {
