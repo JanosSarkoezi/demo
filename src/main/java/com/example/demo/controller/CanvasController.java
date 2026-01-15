@@ -3,27 +3,29 @@ package com.example.demo.controller;
 import com.example.demo.ui.CanvasCamera;
 import com.example.demo.ui.DraggableCircle;
 import com.example.demo.ui.DraggableRectangle;
+import javafx.beans.property.BooleanProperty;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
-import javafx.scene.control.CheckBox;
-import javafx.scene.input.*;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-public class HelloController {
-
-    @FXML public CheckBox snapToGridCheckbox;
-    @FXML public CheckBox stickyCheckbox;
-    @FXML private StackPane circleTool;
-    @FXML private StackPane rectTool;
+public class CanvasController {
     @FXML private Pane drawingCanvas;
-
     private final Group zoomGroup = new Group();
     private CanvasCamera camera;
+
+    // Wir speichern die Properties hier lokal, um sie neuen Shapes zuzuweisen
+    private BooleanProperty snapToGridRef;
+    private BooleanProperty stickyRef;
 
     @FXML
     public void initialize() {
@@ -50,13 +52,14 @@ public class HelloController {
         drawingCanvas.setOnMouseReleased(e -> drawingCanvas.setCursor(Cursor.DEFAULT));
 
         // 4. Drag & Drop Logik (für neue Kreise)
-        circleTool.setOnDragDetected(e -> startToolDrag(circleTool, "NEW_CIRCLE", e));
-        rectTool.setOnDragDetected(e -> startToolDrag(rectTool, "NEW_RECT", e));
         drawingCanvas.setOnDragOver(this::handleCanvasDragOver);
         drawingCanvas.setOnDragDropped(this::handleCanvasDragDropped);
     }
 
-    // --- Drag & Drop Handler ---
+    public void injectProperties(BooleanProperty snap, BooleanProperty sticky) {
+        this.snapToGridRef = snap;
+        this.stickyRef = sticky;
+    }
 
     private void startToolDrag(StackPane tool, String format, MouseEvent event) {
         Dragboard db = tool.startDragAndDrop(TransferMode.COPY);
@@ -81,7 +84,7 @@ public class HelloController {
             DraggableCircle circle = new DraggableCircle(p.getX(), p.getY(), 25, Color.DODGERBLUE, drawingCanvas, zoomGroup);
 
             // BINDUNG: Der Helper des neuen Kreises hört auf die CheckBox
-            circle.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridCheckbox.selectedProperty());
+            circle.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridRef);
 
             zoomGroup.getChildren().add(circle);
 
@@ -89,8 +92,8 @@ public class HelloController {
             DraggableRectangle rect = new DraggableRectangle(p.getX(), p.getY(), 50, 50, Color.RED, drawingCanvas, zoomGroup);
 
             // BINDUNG: Der Helper des neuen Rechtecks hört auf die CheckBox
-            rect.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridCheckbox.selectedProperty());
-            rect.getTransformHelper().stickyEnabledProperty().bind(stickyCheckbox.selectedProperty());
+            rect.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridRef);
+            rect.getTransformHelper().stickyEnabledProperty().bind(stickyRef);
 
             zoomGroup.getChildren().add(rect);
         }

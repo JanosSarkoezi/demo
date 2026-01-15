@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane prefHeight="600.0" prefWidth="800.0" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.demo.controller.MainController">
+    <left>
+        <fx:include fx:id="toolbar" source="toolbar-view.fxml" />
+    </left>
+    <center>
+        <fx:include fx:id="canvas" source="canvas-view.fxml" />
+    </center>
+</BorderPane>
