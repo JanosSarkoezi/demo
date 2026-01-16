@@ -31,6 +31,24 @@ public class RectangleAdapter implements ShapeAdapter {
         rect.setY(centerY - rect.getHeight() / 2);
     }
 
+    private static final double MIN_DIM = 10.0;
+
+    @Override
+    public void resize(String handleName, Point2D p) {
+        if (handleName.contains("E")) rect.setWidth(Math.max(MIN_DIM, p.getX() - rect.getX()));
+        if (handleName.contains("S")) rect.setHeight(Math.max(MIN_DIM, p.getY() - rect.getY()));
+        if (handleName.contains("W")) {
+            double oldRight = rect.getX() + rect.getWidth();
+            rect.setX(Math.min(p.getX(), oldRight - MIN_DIM));
+            rect.setWidth(oldRight - rect.getX());
+        }
+        if (handleName.contains("N")) {
+            double oldBottom = rect.getY() + rect.getHeight();
+            rect.setY(Math.min(p.getY(), oldBottom - MIN_DIM));
+            rect.setHeight(oldBottom - rect.getY());
+        }
+    }
+
     @Override
     public Map<String, Cursor> getHandles() {
         Map<String, Cursor> map = new LinkedHashMap<>();

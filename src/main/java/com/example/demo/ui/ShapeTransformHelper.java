@@ -108,6 +108,20 @@ public class ShapeTransformHelper {
             Cursor cursor = entry.getValue();
 
             ResizeHandle handle = new ResizeHandle(name, cursor, zoomGroup);
+
+            // Event-Handler für das Ziehen der Handles hinzufügen
+            handle.getNode().setOnMouseDragged(e -> {
+                // Mausposition in lokale Koordinaten der ZoomGroup umrechnen
+                Point2D localMouse = zoomGroup.sceneToLocal(new Point2D(e.getSceneX(), e.getSceneY()));
+
+                // Adapter delegiert die Größenänderung
+                adapter.resize(name, localMouse);
+
+                // Alle Handles an die neuen Positionen anpassen
+                updateHandles();
+                e.consume();
+            });
+
             handles.add(handle);
         }
         updateHandles();
@@ -126,19 +140,4 @@ public class ShapeTransformHelper {
         handles.clear();
         handlesVisible = false;
     }
-
-    private Point2D clampAndSnap(double x, double y) {
-        double finalX = x;
-        double finalY = y;
-
-        if (snapToGridEnabled.get()) {
-            double centerX = x + adapter.getWidth() / 2;
-            double centerY = y + adapter.getHeight() / 2;
-            finalX = Math.round(centerX / GRID_SPACING) * GRID_SPACING - adapter.getWidth() / 2;
-            finalY = Math.round(centerY / GRID_SPACING) * GRID_SPACING - adapter.getHeight() / 2;
-        }
-
-        return new Point2D(finalX, finalY);
-    }
-
 }

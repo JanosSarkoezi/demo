@@ -22,6 +22,7 @@ public interface ShapeAdapter {
 
     Point2D getCenter();
     void setCenter(double centerX, double centerY);
+    void resize(String handleName, Point2D mousePos);
 
     /** Liefert die Position eines Handles (in lokalen Shape-Koordinaten) */
     Point2D getHandlePosition(String handleName);

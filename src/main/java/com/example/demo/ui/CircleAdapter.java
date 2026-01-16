@@ -31,6 +31,14 @@ public class CircleAdapter implements ShapeAdapter {
         circle.setCenterY(centerY);
     }
 
+    // In CircleAdapter.java
+    @Override
+    public void resize(String handleName, Point2D p) {
+        double dx = p.getX() - circle.getCenterX();
+        double dy = p.getY() - circle.getCenterY();
+        circle.setRadius(Math.max(5.0, Math.sqrt(dx * dx + dy * dy)));
+    }
+
     @Override
     public Map<String, Cursor> getHandles() {
         Map<String, Cursor> map = new LinkedHashMap<>();
