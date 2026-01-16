@@ -3,6 +3,8 @@ package com.example.demo.ui;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Shape;
 import javafx.scene.Cursor;
+
+import java.util.List;
 import java.util.Map;
 
 public interface ShapeAdapter {
@@ -19,6 +21,10 @@ public interface ShapeAdapter {
 
     /** Liefert die Handle-Positionen: Map<HandleName, Cursor> */
     Map<String, Cursor> getHandles();
+    /** Liefert die Namen der verfügbaren Andockstellen (z.B. "N", "S", "E", "W") */
+    List<String> getConnectionPointNames();
+    /** Liefert die aktuelle Position einer Andockstelle basierend auf ihrem Namen */
+    Point2D getConnectionPointPosition(String name);
 
     Point2D getCenter();
     void setCenter(double centerX, double centerY);

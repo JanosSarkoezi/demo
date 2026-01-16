@@ -53,9 +53,12 @@ public class ShapeTransformHelper {
 
     private void onMousePressed(MouseEvent e) {
         if (e.isControlDown()) {
-            toggleHandles();
+            toggleHandles(); //
+        } else if (e.isAltDown()) {
+            toggleConnectionPoints();
         } else {
             hideHandles();
+            hideConnectionPoints();
 
             // Nutze das Zentrum für den Anker, nicht die Position (Ecke)
             Point2D center = adapter.getCenter();
@@ -90,18 +93,23 @@ public class ShapeTransformHelper {
         adapter.setCenter(finalCenterX, finalCenterY);
 
         updateHandles();
+        updateConnectionPoints();
         e.consume();
     }
 
     private void onMouseReleased(MouseEvent e) { e.consume(); }
 
     private void toggleHandles() {
-        if (handlesVisible) hideHandles();
-        else showHandles();
-        handlesVisible = !handlesVisible;
+        if (handlesVisible) {
+            hideHandles();
+        } else {
+            showHandles();
+        }
     }
 
     private void showHandles() {
+        hideConnectionPoints();
+
         Map<String, Cursor> handleMap = adapter.getHandles();
         for (var entry : handleMap.entrySet()) {
             String name = entry.getKey();
@@ -125,6 +133,7 @@ public class ShapeTransformHelper {
             handles.add(handle);
         }
         updateHandles();
+        handlesVisible = true;
     }
 
     private void updateHandles() {
@@ -139,5 +148,43 @@ public class ShapeTransformHelper {
         handles.forEach(h -> zoomGroup.getChildren().remove(h.getNode()));
         handles.clear();
         handlesVisible = false;
+    }
+
+    // Neue Felder hinzufügen
+    private final List<ConnectionDot> connectionDots = new ArrayList<>();
+    private boolean connectionPointsVisible = false;
+
+
+
+    private void toggleConnectionPoints() {
+        if (connectionPointsVisible) {
+            hideConnectionPoints();
+        } else {
+            showConnectionPoints();
+        }
+    }
+
+    private void showConnectionPoints() {
+        hideHandles();
+        for (String name : adapter.getConnectionPointNames()) {
+            ConnectionDot dot = new ConnectionDot(name, zoomGroup);
+            connectionDots.add(dot);
+        }
+        updateConnectionPoints();
+        connectionPointsVisible = true;
+    }
+
+    private void updateConnectionPoints() {
+        for (ConnectionDot dot : connectionDots) {
+            Point2D pos = adapter.getConnectionPointPosition(dot.getPointName());
+            dot.getNode().setCenterX(pos.getX());
+            dot.getNode().setCenterY(pos.getY());
+        }
+    }
+
+    private void hideConnectionPoints() {
+        connectionDots.forEach(d -> zoomGroup.getChildren().remove(d.getNode()));
+        connectionDots.clear();
+        connectionPointsVisible = false;
     }
 }

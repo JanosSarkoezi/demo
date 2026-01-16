@@ -5,6 +5,7 @@ import javafx.scene.Cursor;
 import javafx.scene.shape.Rectangle;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RectangleAdapter implements ShapeAdapter {
@@ -80,6 +81,27 @@ public class RectangleAdapter implements ShapeAdapter {
             case "S"  -> new Point2D(x + w / 2, y + h);
             case "SE" -> new Point2D(x + w, y + h);
             default -> throw new IllegalArgumentException("Unknown handle: " + handleName);
+        };
+    }
+
+    @Override
+    public List<String> getConnectionPointNames() {
+        return List.of("N", "S", "E", "W");
+    }
+
+    @Override
+    public Point2D getConnectionPointPosition(String name) {
+        double x = rect.getX();      //
+        double y = rect.getY();      //
+        double w = rect.getWidth();  //
+        double h = rect.getHeight(); //
+
+        return switch (name) {
+            case "N" -> new Point2D(x + w / 2, y);
+            case "S" -> new Point2D(x + w / 2, y + h);
+            case "E" -> new Point2D(x + w, y + h / 2);
+            case "W" -> new Point2D(x, y + h / 2);
+            default -> throw new IllegalArgumentException("Unbekannter Punkt: " + name);
         };
     }
 }

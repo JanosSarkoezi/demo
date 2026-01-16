@@ -5,6 +5,7 @@ import javafx.scene.Cursor;
 import javafx.scene.shape.Circle;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CircleAdapter implements ShapeAdapter {
@@ -61,6 +62,26 @@ public class CircleAdapter implements ShapeAdapter {
             case "E" -> new Point2D(cx + r, cy);
             case "W" -> new Point2D(cx - r, cy);
             default -> throw new IllegalArgumentException("Unknown handle: " + handleName);
+        };
+    }
+
+    @Override
+    public List<String> getConnectionPointNames() {
+        return List.of("N", "S", "E", "W");
+    }
+
+    @Override
+    public Point2D getConnectionPointPosition(String name) {
+        double cx = circle.getCenterX(); //
+        double cy = circle.getCenterY(); //
+        double r  = circle.getRadius();  //
+
+        return switch (name) {
+            case "N" -> new Point2D(cx, cy - r);
+            case "S" -> new Point2D(cx, cy + r);
+            case "E" -> new Point2D(cx + r, cy);
+            case "W" -> new Point2D(cx - r, cy);
+            default -> throw new IllegalArgumentException("Unbekannter Punkt: " + name);
         };
     }
 }
