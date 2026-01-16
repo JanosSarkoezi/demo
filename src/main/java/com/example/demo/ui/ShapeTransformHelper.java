@@ -6,7 +6,6 @@ import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Pane;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,8 +69,6 @@ public class ShapeTransformHelper {
         e.consume();
     }
 
-// Im ShapeTransformHelper.java
-
     private void onMouseDragged(MouseEvent e) {
         // 1. Berechne das theoretische neue Zentrum (roh)
         double rawCenterX = e.getX() + anchorX;
@@ -108,25 +105,15 @@ public class ShapeTransformHelper {
     }
 
     private void showHandles() {
-        hideConnectionPoints();
-
-        Map<String, Cursor> handleMap = adapter.getHandles();
-        for (var entry : handleMap.entrySet()) {
-            String name = entry.getKey();
-            Cursor cursor = entry.getValue();
-
+        for (String name : adapter.getHandleNames()) {
+            Cursor cursor = adapter.getHandleCursor(name);
             ResizeHandle handle = new ResizeHandle(name, cursor, zoomGroup);
 
-            // Event-Handler für das Ziehen der Handles hinzufügen
             handle.getNode().setOnMouseDragged(e -> {
-                // Mausposition in lokale Koordinaten der ZoomGroup umrechnen
-                Point2D localMouse = zoomGroup.sceneToLocal(new Point2D(e.getSceneX(), e.getSceneY()));
-
-                // Adapter delegiert die Größenänderung
+                Point2D localMouse = zoomGroup.sceneToLocal(e.getSceneX(), e.getSceneY());
                 adapter.resize(name, localMouse);
-
-                // Alle Handles an die neuen Positionen anpassen
                 updateHandles();
+
                 e.consume();
             });
 
@@ -154,8 +141,6 @@ public class ShapeTransformHelper {
     private final List<ConnectionDot> connectionDots = new ArrayList<>();
     private boolean connectionPointsVisible = false;
 
-
-
     private void toggleConnectionPoints() {
         if (connectionPointsVisible) {
             hideConnectionPoints();
@@ -164,10 +149,38 @@ public class ShapeTransformHelper {
         }
     }
 
+    private OrthogonalArrow activeArrow;
+
     private void showConnectionPoints() {
-        hideHandles();
         for (String name : adapter.getConnectionPointNames()) {
             ConnectionDot dot = new ConnectionDot(name, zoomGroup);
+
+            // --- HIER kommt die Logik rein ---
+
+            dot.getNode().setOnMousePressed(e -> {
+                // 1. Startpunkt berechnen
+                Point2D startPos = adapter.getConnectionPointPosition(name);
+                // 2. Temporären Pfeil erstellen und zur Anzeige hinzufügen
+                activeArrow = new OrthogonalArrow(startPos);
+                zoomGroup.getChildren().add(activeArrow);
+                e.consume();
+            });
+
+            dot.getNode().setOnMouseDragged(e -> {
+                // 3. Mausposition in Diagramm-Koordinaten umrechnen
+                Point2D currentMouse = zoomGroup.sceneToLocal(e.getSceneX(), e.getSceneY());
+                Point2D startPos = adapter.getConnectionPointPosition(name);
+                // 4. Pfad des Pfeils live aktualisieren
+                activeArrow.updatePath(startPos, currentMouse);
+                e.consume();
+            });
+
+            dot.getNode().setOnMouseReleased(e -> {
+                // 5. Ziel finden und Verbindung permanent speichern (Logik folgt im Manager)
+                handleArrowRelease(e, dot);
+                e.consume();
+            });
+
             connectionDots.add(dot);
         }
         updateConnectionPoints();

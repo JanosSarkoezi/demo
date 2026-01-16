@@ -19,17 +19,23 @@ public interface ShapeAdapter {
     void setWidth(double w);
     void setHeight(double h);
 
-    /** Liefert die Handle-Positionen: Map<HandleName, Cursor> */
-    Map<String, Cursor> getHandles();
-    /** Liefert die Namen der verfügbaren Andockstellen (z.B. "N", "S", "E", "W") */
+    List<String> getHandleNames(); // Neu: Ersetzt die Notwendigkeit der Map in der View-Logik
+    /**
+     * Liefert die Position eines Handles (in lokalen Shape-Koordinaten)
+     * */
+    Point2D getHandlePosition(String handleName);
+    Cursor getHandleCursor(String name); // Der Adapter weiß, welcher Cursor zu welchem Handle passt
+    /**
+     * Liefert die Namen der verfügbaren Andockstellen (z.B. "N", "S", "E", "W")
+     */
     List<String> getConnectionPointNames();
-    /** Liefert die aktuelle Position einer Andockstelle basierend auf ihrem Namen */
-    Point2D getConnectionPointPosition(String name);
 
+    /**
+     * Liefert die aktuelle Position einer Andockstelle basierend auf ihrem Namen
+     */
+    Point2D getConnectionPointPosition(String name);
     Point2D getCenter();
     void setCenter(double centerX, double centerY);
-    void resize(String handleName, Point2D mousePos);
 
-    /** Liefert die Position eines Handles (in lokalen Shape-Koordinaten) */
-    Point2D getHandlePosition(String handleName);
+    void resize(String handleName, Point2D mousePos);
 }

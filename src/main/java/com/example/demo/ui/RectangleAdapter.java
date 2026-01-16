@@ -4,9 +4,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.shape.Rectangle;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RectangleAdapter implements ShapeAdapter {
     private final Rectangle rect;
@@ -51,17 +49,19 @@ public class RectangleAdapter implements ShapeAdapter {
     }
 
     @Override
-    public Map<String, Cursor> getHandles() {
-        Map<String, Cursor> map = new LinkedHashMap<>();
-        map.put("NW", Cursor.NW_RESIZE);
-        map.put("N",  Cursor.N_RESIZE);
-        map.put("NE", Cursor.NE_RESIZE);
-        map.put("W",  Cursor.W_RESIZE);
-        map.put("E",  Cursor.E_RESIZE);
-        map.put("SW", Cursor.SW_RESIZE);
-        map.put("S",  Cursor.S_RESIZE);
-        map.put("SE", Cursor.SE_RESIZE);
-        return map;
+    public List<String> getHandleNames() {
+        return List.of("NW", "N", "NE", "W", "E", "SW", "S", "SE");
+    }
+
+    @Override
+    public Cursor getHandleCursor(String name) {
+        return switch (name) {
+            case "NW", "SE" -> Cursor.NW_RESIZE;
+            case "NE", "SW" -> Cursor.NE_RESIZE;
+            case "N", "S"   -> Cursor.N_RESIZE;
+            case "E", "W"   -> Cursor.E_RESIZE;
+            default -> Cursor.DEFAULT;
+        };
     }
 
     @Override

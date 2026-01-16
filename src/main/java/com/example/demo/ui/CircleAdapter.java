@@ -41,13 +41,19 @@ public class CircleAdapter implements ShapeAdapter {
     }
 
     @Override
-    public Map<String, Cursor> getHandles() {
-        Map<String, Cursor> map = new LinkedHashMap<>();
-        map.put("N", Cursor.N_RESIZE);
-        map.put("S", Cursor.S_RESIZE);
-        map.put("E", Cursor.E_RESIZE);
-        map.put("W", Cursor.W_RESIZE);
-        return map;
+    public List<String> getHandleNames() {
+        return List.of("N", "W", "E", "S");
+    }
+
+    @Override
+    public Cursor getHandleCursor(String name) {
+        return switch (name) {
+            case "NW", "SE" -> Cursor.NW_RESIZE;
+            case "NE", "SW" -> Cursor.NE_RESIZE;
+            case "N", "S"   -> Cursor.N_RESIZE;
+            case "E", "W"   -> Cursor.E_RESIZE;
+            default -> Cursor.DEFAULT;
+        };
     }
 
     @Override
