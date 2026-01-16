@@ -15,6 +15,7 @@ public class ConnectionDot {
         this.circle = new Circle(DOT_RADIUS, Color.LIGHTBLUE);
         this.circle.setStroke(Color.DARKBLUE);
         this.circle.setStrokeWidth(1);
+        this.circle.setUserData("CONN_POINT");
 
         // Cursor-Feedback: Hier beginnt oder endet eine Linie
         this.circle.setCursor(javafx.scene.Cursor.CROSSHAIR);

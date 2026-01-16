@@ -9,11 +9,12 @@ import javafx.scene.input.MouseEvent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ShapeTransformHelper {
     private final ShapeAdapter adapter;
     private final Group zoomGroup;
+    private final ConnectionHandler connectionHandler;
+
     private final List<ResizeHandle> handles = new ArrayList<>();
     private final BooleanProperty snapToGrid = new SimpleBooleanProperty(true);
     private final BooleanProperty sticky = new SimpleBooleanProperty(false);
@@ -38,6 +39,9 @@ public class ShapeTransformHelper {
     public ShapeTransformHelper(ShapeAdapter adapter, Group zoomGroup) {
         this.adapter = adapter;
         this.zoomGroup = zoomGroup;
+
+        this.connectionHandler = new ConnectionHandler(adapter, zoomGroup);
+
         setupInteractions();
     }
 
@@ -149,37 +153,14 @@ public class ShapeTransformHelper {
         }
     }
 
-    private OrthogonalArrow activeArrow;
-
     private void showConnectionPoints() {
         for (String name : adapter.getConnectionPointNames()) {
             ConnectionDot dot = new ConnectionDot(name, zoomGroup);
 
-            // --- HIER kommt die Logik rein ---
-
-            dot.getNode().setOnMousePressed(e -> {
-                // 1. Startpunkt berechnen
-                Point2D startPos = adapter.getConnectionPointPosition(name);
-                // 2. Temporären Pfeil erstellen und zur Anzeige hinzufügen
-                activeArrow = new OrthogonalArrow(startPos);
-                zoomGroup.getChildren().add(activeArrow);
-                e.consume();
-            });
-
-            dot.getNode().setOnMouseDragged(e -> {
-                // 3. Mausposition in Diagramm-Koordinaten umrechnen
-                Point2D currentMouse = zoomGroup.sceneToLocal(e.getSceneX(), e.getSceneY());
-                Point2D startPos = adapter.getConnectionPointPosition(name);
-                // 4. Pfad des Pfeils live aktualisieren
-                activeArrow.updatePath(startPos, currentMouse);
-                e.consume();
-            });
-
-            dot.getNode().setOnMouseReleased(e -> {
-                // 5. Ziel finden und Verbindung permanent speichern (Logik folgt im Manager)
-                handleArrowRelease(e, dot);
-                e.consume();
-            });
+            // Wir leiten die Events einfach an den Spezialisten weiter
+            dot.getNode().setOnMousePressed(e -> connectionHandler.handleConnectionPress(e, name));
+            dot.getNode().setOnMouseDragged(e -> connectionHandler.handleConnectionDrag(e, name));
+            dot.getNode().setOnMouseReleased(e -> connectionHandler.handleConnectionRelease(e, name));
 
             connectionDots.add(dot);
         }
