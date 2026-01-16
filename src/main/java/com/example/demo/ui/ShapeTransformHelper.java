@@ -6,6 +6,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,46 +52,46 @@ public class ShapeTransformHelper {
     }
 
     private void onMousePressed(MouseEvent e) {
-        if (e.isControlDown()) toggleHandles();
-        else {
+        if (e.isControlDown()) {
+            toggleHandles();
+        } else {
             hideHandles();
 
-            // Mouse-Position relativ zur Parent-Group
-            Point2D shapePos = adapter.getPosition(); // Position in Parent-Koordinaten
-            anchorX = shapePos.getX() - e.getX();
-            anchorY = shapePos.getY() - e.getY();
+            // Nutze das Zentrum für den Anker, nicht die Position (Ecke)
+            Point2D center = adapter.getCenter();
+            anchorX = center.getX() - e.getX();
+            anchorY = center.getY() - e.getY();
 
             adapter.getShape().toFront();
         }
         e.consume();
     }
 
-    private void onMouseDragged(MouseEvent e) {
-        Point2D mousePos = new Point2D(e.getX(), e.getY());
-        double x = mousePos.getX() + anchorX;
-        double y = mousePos.getY() + anchorY;
+// Im ShapeTransformHelper.java
 
-        adapter.setPosition(x, y);
-        applySnap();
+    private void onMouseDragged(MouseEvent e) {
+        // 1. Berechne das theoretische neue Zentrum (roh)
+        double rawCenterX = e.getX() + anchorX;
+        double rawCenterY = e.getY() + anchorY;
+
+        // 2. Snapping auf das Zentrum anwenden
+        double finalCenterX = rawCenterX;
+        double finalCenterY = rawCenterY;
+
+        if (snapToGridEnabled.get()) {
+            finalCenterX = Math.round(rawCenterX / GRID_SPACING) * GRID_SPACING;
+            finalCenterY = Math.round(rawCenterY / GRID_SPACING) * GRID_SPACING;
+        }
+
+        // 3. Optional: Clamping (Begrenzung), falls gewünscht
+        // Hier müsste man die halbe Breite/Höhe abziehen/addieren für die Grenzen
+
+        // 4. Das Zentrum direkt setzen
+        adapter.setCenter(finalCenterX, finalCenterY);
 
         updateHandles();
         e.consume();
     }
-
-    private void applySnap() {
-        if (!snapToGridEnabled.get()) return;
-
-        // Aktuelle Mitte des Shapes
-        Point2D center = adapter.getCenter();
-
-        // Snap-Mittelpunkt auf Grid
-        double snappedX = Math.round(center.getX() / GRID_SPACING) * GRID_SPACING;
-        double snappedY = Math.round(center.getY() / GRID_SPACING) * GRID_SPACING;
-
-        // Neue Position über Adapter setzen
-        adapter.setCenter(snappedX, snappedY);
-    }
-
 
     private void onMouseReleased(MouseEvent e) { e.consume(); }
 
