@@ -33,7 +33,7 @@ public class CanvasController {
     public void initialize() {
         // 1. Hierarchie & Kamera Setup
         drawingCanvas.getChildren().add(zoomGroup);
-        camera = new CanvasCamera(drawingCanvas, zoomGroup);
+        camera = new CanvasCamera(zoomGroup);
 
         // 2. Clipping (Damit Inhalte nicht über den Rand ragen)
         Rectangle clip = new Rectangle();

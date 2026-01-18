@@ -1,10 +1,15 @@
 package com.example.demo.app;
 
+import com.example.demo.ui.CanvasCamera;
 import javafx.application.Application;
+import javafx.geometry.Point2D;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -13,84 +18,118 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
-// 1. Das Tool-Interface für unser State-Pattern
+// 1. Tool-Interface
 interface Tool {
-    void handle(MouseEvent event, Pane canvas);
+    void handle(MouseEvent event, Pane canvas, Group world);
+
     String getName();
 }
 
-// 2. Konkrete Werkzeuge (Java 21 Records für Kompaktheit)
+// 2. Die Werkzeuge
 record DrawTool() implements Tool {
-    public String getName() { return "ZEICHNEN (Klick auf Hintergrund)"; }
+    public String getName() {
+        return "ZEICHNEN (Klick auf Hintergrund)";
+    }
+
     @Override
-    public void handle(MouseEvent event, Pane canvas) {
+    public void handle(MouseEvent event, Pane canvas, Group world) {
         if (event.getEventType() == MouseEvent.MOUSE_CLICKED && event.getTarget() == canvas) {
-            Circle c = new Circle(event.getX(), event.getY(), 20, Color.CYAN);
+            // Umrechnung: Wo ist der Klick relativ zur skalierten/verschobenen Welt?
+            Point2D pos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+            Circle c = new Circle(pos.getX(), pos.getY(), 20, Color.CYAN);
             c.setStroke(Color.WHITE);
-            canvas.getChildren().add(c);
+            world.getChildren().add(c);
         }
     }
 }
 
-record SelectTool() implements Tool {
-    public String getName() { return "AUSWAHL (Klick auf Objekte)"; }
+class MoveTool implements Tool {
+    private javafx.scene.Node target = null;
+    private Point2D lastMouseInWorld = null;
+
     @Override
-    public void handle(MouseEvent event, Pane canvas) {
-        if (event.getEventType() == MouseEvent.MOUSE_CLICKED) {
-            // Java 21 Pattern Matching: Prüfen, Casten und Filtern in einem Schritt
+    public String getName() {
+        return "MOVE & PAN (Objekt oder Welt)";
+    }
+
+    @Override
+    public void handle(MouseEvent event, Pane canvas, Group world) {
+        // Wir rechnen die aktuelle Mausposition IMMER in Welt-Koordinaten um
+        Point2D currentMouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+
+        if (event.getEventType() == MouseEvent.MOUSE_PRESSED) {
+            lastMouseInWorld = currentMouseInWorld;
+
             if (event.getTarget() instanceof Shape s) {
-                s.setFill(Color.LIME);
-                s.setScaleX(s.getScaleX() * 1.1); // Ein bisschen Feedback
-                s.setScaleY(s.getScaleY() * 1.1);
+                target = s;
+            } else {
+                target = world;
             }
+            event.consume();
+        } else if (event.getEventType() == MouseEvent.MOUSE_DRAGGED && target != null) {
+            // Delta im Welt-Koordinatensystem (Zoom/Pan bereits "herausgerechnet")
+            double deltaX = currentMouseInWorld.getX() - lastMouseInWorld.getX();
+            double deltaY = currentMouseInWorld.getY() - lastMouseInWorld.getY();
+
+            target.setTranslateX(target.getTranslateX() + deltaX);
+            target.setTranslateY(target.getTranslateY() + deltaY);
+
+            // WICHTIG: Nach der Bewegung die Position neu berechnen
+            lastMouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+        } else if (event.getEventType() == MouseEvent.MOUSE_RELEASED) {
+            target = null;
         }
     }
 }
 
-// 3. Die Hauptanwendung
+// 3. Hauptanwendung
 public class DrawingApp extends Application {
 
     private Tool currentTool = new DrawTool();
+    private final Group world = new Group();
     private final Label statusLabel = new Label();
+    private final CanvasCamera camera = new CanvasCamera(world);
 
     @Override
     public void start(Stage primaryStage) {
         BorderPane root = new BorderPane();
-        Pane canvas = new Pane();
-        canvas.setStyle("-fx-background-color: #1a1a1a;"); // Dunkles Zen-Schwarz
+        Pane canvas = new Pane(world);
+        canvas.setStyle("-fx-background-color: #1a1a1a;");
 
-        // Initialer Inhalt
-        Rectangle rect = new Rectangle(50, 50, 100, 100);
-        rect.setFill(Color.ORANGERED);
-        canvas.getChildren().add(rect);
+        // Clipping: Verhindert, dass gezoomte Objekte aus dem Canvas "rauslaufen"
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(canvas.widthProperty());
+        clip.heightProperty().bind(canvas.heightProperty());
+        canvas.setClip(clip);
 
-        // Der Event-Manager / Mediator
-        canvas.addEventHandler(MouseEvent.ANY, e -> currentTool.handle(e, canvas));
+        // Events delegieren
+        canvas.addEventHandler(MouseEvent.ANY, e -> currentTool.handle(e, canvas, world));
 
-        // UI-Steuerung
+        // Zoom-Funktionalität
+        canvas.addEventHandler(ScrollEvent.SCROLL, e -> camera.handleZoom(e));
+
+        // UI Setup
         updateStatus();
         root.setCenter(canvas);
         root.setBottom(statusLabel);
         statusLabel.setStyle("-fx-padding: 10; -fx-text-fill: white; -fx-background-color: #333;");
 
-        Scene scene = new Scene(root, 600, 400);
+        Scene scene = new Scene(root, 800, 600);
 
-        // Werkzeugwechsel via Tastatur
-        scene.setOnKeyPressed(e -> {
+        // Key-Steuerung via Filter (fängt Events ab, bevor Nodes sie konsumieren)
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
             if (e.getCode() == KeyCode.D) currentTool = new DrawTool();
-            if (e.getCode() == KeyCode.S) currentTool = new SelectTool();
+            if (e.getCode() == KeyCode.M) currentTool = new MoveTool();
             updateStatus();
         });
 
-        primaryStage.setTitle("JavaFX Meditation: [D] Zeichnen | [S] Selektieren");
+        primaryStage.setTitle("JavaFX Infinite Canvas: [D] Draw | [M] Move & Pan | Scroll to Zoom");
         primaryStage.setScene(scene);
         primaryStage.show();
-
-        canvas.requestFocus(); // Damit Tastatureingaben direkt funktionieren
     }
 
     private void updateStatus() {
-        statusLabel.setText("Aktives Werkzeug: " + currentTool.getName() + " | Drücke [D] oder [S] zum Wechseln");
+        statusLabel.setText("Tool: " + currentTool.getName() + " | [D] Zeichnen [M] Verschieben");
     }
 
     public static void main(String[] args) {

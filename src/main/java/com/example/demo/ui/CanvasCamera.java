@@ -7,15 +7,13 @@ import javafx.scene.layout.Pane;
 import javafx.scene.transform.Scale;
 
 public class CanvasCamera {
-    private final Pane frame;
     private final Group content;
     private final Scale zoomTransform = new Scale(1, 1, 0, 0);
 
     private double anchorX;
     private double anchorY;
 
-    public CanvasCamera(Pane frame, Group content) {
-        this.frame = frame;
+    public CanvasCamera(Group content) {
         this.content = content;
         this.content.getTransforms().add(zoomTransform);
     }
