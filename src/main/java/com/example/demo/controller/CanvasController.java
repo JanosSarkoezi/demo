@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.tool.DrawTool;
 import com.example.demo.tool.MoveTool;
 import com.example.demo.tool.Tool;
 import com.example.demo.ui.CanvasCamera;
@@ -120,5 +121,13 @@ public class CanvasController {
             }
             event.consume();
         });
+    }
+
+    public Tool getCurrentTool() {
+        return currentTool;
+    }
+
+    public void setCurrentTool(Tool currentTool) {
+        this.currentTool = currentTool;
     }
 }

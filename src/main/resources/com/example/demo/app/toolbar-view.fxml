@@ -4,24 +4,47 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
 
-<VBox spacing="15.0" style="-fx-background-color: #f0f0f0; -fx-border-color: #ccc; -fx-border-width: 0 1 0 0;"
-      prefWidth="120.0" xmlns:fx="http://javafx.com/fxml"
+<VBox fx:id="toolbarContainer" spacing="10.0" prefWidth="140.0"
+      stylesheets="@css/style.css" styleClass="toolbar"
+      xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.example.demo.controller.ToolbarController">
     <padding>
-        <Insets top="20" right="10" bottom="20" left="10"/>
+        <Insets top="15" right="10" bottom="15" left="10"/>
     </padding>
-    <Label text="Shapes" style="-fx-font-weight: bold;"/>
-    <StackPane fx:id="circleTool" style="-fx-cursor: hand;">
-        <Circle radius="25.0" fill="DODGERBLUE" stroke="BLACK" />
-        <Label text="Circle" mouseTransparent="true"/>
-    </StackPane>
-    <StackPane fx:id="rectTool" style="-fx-cursor: hand;">
-        <Rectangle width="50.0" height="50.0" fill="ORANGERED" stroke="BLACK" />
-        <Label text="Rect" mouseTransparent="true" style="-fx-text-fill: white;"/>
-    </StackPane>
-    <Label text="Settings" style="-fx-font-weight: bold;">
-        <VBox.margin><Insets top="20"/></VBox.margin>
-    </Label>
+
+    <fx:define>
+        <ToggleGroup fx:id="toolGroup"/>
+    </fx:define>
+
+    <Label text="Shapes" styleClass="section-label"/>
+
+    <ToggleButton fx:id="circleButton" toggleGroup="$toolGroup"
+                  maxWidth="Infinity" styleClass="tool-button"
+                  text="_Circle">
+        <tooltip><Tooltip text="Draw circle (Alt+C)"/></tooltip>
+        <graphic>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Circle radius="10.0" styleClass="tool-icon-circle"/>
+            </HBox>
+        </graphic>
+    </ToggleButton>
+
+    <ToggleButton fx:id="rectButton" toggleGroup="$toolGroup"
+                  maxWidth="Infinity" styleClass="tool-button"
+                  text="_Rectangle">
+        <tooltip><Tooltip text="Draw rectangle (Alt+R)"/></tooltip>
+        <graphic>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Rectangle width="18.0" height="18.0" styleClass="tool-icon-rect"/>
+            </HBox>
+        </graphic>
+    </ToggleButton>
+
+    <Separator>
+        <VBox.margin><Insets top="10" bottom="10"/></VBox.margin>
+    </Separator>
+
+    <Label text="Settings" style="-fx-font-weight: bold; -fx-text-fill: #555;"/>
     <CheckBox fx:id="snapToGridCheckbox" text="Snap to Grid" selected="true" />
-    <CheckBox fx:id="stickyCheckbox" text="Shapes verkleben" />
+    <CheckBox fx:id="stickyCheckbox" text="Verkleben" />
 </VBox>

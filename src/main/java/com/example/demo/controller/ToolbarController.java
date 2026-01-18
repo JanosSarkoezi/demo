@@ -1,35 +1,49 @@
 package com.example.demo.controller;
 
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
-import javafx.scene.layout.StackPane;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 
 public class ToolbarController {
+    public enum ToolType { NONE, CIRCLE, RECTANGLE }
+
+    @FXML private ToggleButton circleButton;
+    @FXML private ToggleButton rectButton;
+    @FXML private ToggleGroup toolGroup;
     @FXML public CheckBox snapToGridCheckbox;
     @FXML public CheckBox stickyCheckbox;
-    @FXML private StackPane circleTool;
-    @FXML private StackPane rectTool;
+
+    private final ObjectProperty<ToolType> selectedTool = new SimpleObjectProperty<>(ToolType.NONE);
 
     @FXML
     public void initialize() {
-        // Logik für den Start des Drags (von HelloController hierher verschoben)
-        circleTool.setOnDragDetected(e -> startToolDrag(circleTool, "NEW_CIRCLE", e));
-        rectTool.setOnDragDetected(e -> startToolDrag(rectTool, "NEW_RECT", e));
+        // Überwachung der Gruppe
+        toolGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (newToggle == circleButton) {
+                selectedTool.set(ToolType.CIRCLE);
+            } else if (newToggle == rectButton) {
+                selectedTool.set(ToolType.RECTANGLE);
+            } else {
+                selectedTool.set(ToolType.NONE);
+            }
+        });
+
+        // Optional: Logik für Tasten ohne ALT (sobald die Scene verfügbar ist)
+        circleButton.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.getAccelerators().put(new KeyCodeCombination(KeyCode.C), () -> circleButton.fire());
+                newScene.getAccelerators().put(new KeyCodeCombination(KeyCode.R), () -> rectButton.fire());
+            }
+        });
     }
 
-    private void startToolDrag(StackPane tool, String format, MouseEvent event) {
-        Dragboard db = tool.startDragAndDrop(TransferMode.COPY);
-        ClipboardContent content = new ClipboardContent();
-        content.putString(format);
-        db.setContent(content);
-        event.consume();
-    }
-
+    public ObjectProperty<ToolType> selectedToolProperty() { return selectedTool; }
     // Getter, damit der MainController die Properties an den Canvas binden kann
     public BooleanProperty snapToGridProperty() { return snapToGridCheckbox.selectedProperty(); }
     public BooleanProperty stickyProperty() { return stickyCheckbox.selectedProperty(); }

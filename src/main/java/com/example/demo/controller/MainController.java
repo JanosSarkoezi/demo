@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.tool.DrawTool;
+import com.example.demo.tool.MoveTool;
 import javafx.fxml.FXML;
 
 public class MainController {
@@ -13,5 +15,14 @@ public class MainController {
                 toolbarController.snapToGridProperty(),
                 toolbarController.stickyProperty()
         );
+
+        toolbarController.selectedToolProperty().addListener((obs, oldTool, newTool) -> {
+            if (newTool == ToolbarController.ToolType.CIRCLE || newTool == ToolbarController.ToolType.RECTANGLE) {
+                // Setze das aktuelle Tool auf eine neue Instanz von DrawTool
+                canvasController.setCurrentTool(new DrawTool(newTool));
+            } else {
+                canvasController.setCurrentTool(new MoveTool());
+            }
+        });
     }
 }

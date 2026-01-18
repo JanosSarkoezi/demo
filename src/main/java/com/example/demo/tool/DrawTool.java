@@ -1,31 +1,59 @@
 package com.example.demo.tool;
 
+import com.example.demo.controller.ToolbarController.ToolType; // Enum importieren
 import com.example.demo.ui.CircleAdapter;
+import com.example.demo.ui.RectangleAdapter;
+import com.example.demo.ui.ShapeAdapter;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 
 public class DrawTool implements Tool {
+    private final ToolType toolType;
+
+    public DrawTool(ToolType toolType) {
+        this.toolType = toolType;
+    }
+
     @Override
     public String getName() {
-        return "ZEICHNEN (Klick auf Hintergrund)";
+        return "ZEICHNEN: " + toolType;
     }
 
     @Override
     public void handle(MouseEvent event, Pane canvas, Group world) {
         if (event.getEventType() == MouseEvent.MOUSE_CLICKED && event.getTarget() == canvas) {
-            // Umrechnung: Wo ist der Klick relativ zur skalierten/verschobenen Welt?
             Point2D pos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
-            Circle c = new Circle(pos.getX(), pos.getY(), 20, Color.CYAN);
 
-            CircleAdapter adapter = new CircleAdapter(c);
-            c.setUserData(adapter);
+            Shape shape;
+            ShapeAdapter adapter;
 
-            c.setStroke(Color.WHITE);
-            world.getChildren().add(c);
+            // Logik basierend auf dem ToolType
+            if (toolType == ToolType.CIRCLE) {
+                Circle c = new Circle(pos.getX(), pos.getY(), 20);
+                c.setFill(Color.TRANSPARENT);
+                adapter = new CircleAdapter(c);
+                shape = c;
+            } else if (toolType == ToolType.RECTANGLE) {
+                // Erstellt ein 40x40 Rechteck, zentriert auf den Klick
+                Rectangle r = new Rectangle(pos.getX() - 20, pos.getY() - 20, 40, 40);
+                r.setFill(Color.TRANSPARENT);
+                adapter = new RectangleAdapter(r);
+                shape = r;
+            } else {
+                return;
+            }
+
+            shape.setUserData(adapter); // Adapter für spätere Selektion/Resize speichern
+            shape.setStroke(Color.BLACK);
+            shape.setStrokeWidth(3);
+
+            world.getChildren().add(shape);
         }
     }
 }
