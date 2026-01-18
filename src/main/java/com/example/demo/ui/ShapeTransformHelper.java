@@ -5,7 +5,9 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,22 +57,24 @@ public class ShapeTransformHelper {
     }
 
     private void onMousePressed(MouseEvent e) {
-        if (e.isControlDown()) {
-            toggleHandles(); //
-        } else if (e.isAltDown()) {
-            toggleConnectionPoints();
-        } else {
-            hideHandles();
-            hideConnectionPoints();
+        if (e.getButton() == MouseButton.PRIMARY) {
+            if (e.isControlDown()) {
+                toggleHandles();
+            } else if (e.isAltDown()) {
+                toggleConnectionPoints();
+            } else {
+                hideHandles();
+                hideConnectionPoints();
 
-            // Nutze das Zentrum für den Anker, nicht die Position (Ecke)
-            Point2D center = adapter.getCenter();
-            anchorX = center.getX() - e.getX();
-            anchorY = center.getY() - e.getY();
-
-            adapter.getShape().toFront();
+                Point2D center = adapter.getCenter();
+                anchorX = center.getX() - e.getX();
+                anchorY = center.getY() - e.getY();
+                adapter.getShape().toFront();
+            }
+            e.consume();
         }
-        e.consume();
+        // Bei Rechtsklick (SECONDARY) rufen wir hier e.consume() NICHT auf,
+        // damit das Event zur zoomGroup "durchfällt" und dort createYellowMovableDot auslöst.
     }
 
     private void onMouseDragged(MouseEvent e) {

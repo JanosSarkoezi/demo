@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.ui.CanvasCamera;
+import com.example.demo.ui.ConnectionDot;
 import com.example.demo.ui.DraggableCircle;
 import com.example.demo.ui.DraggableRectangle;
 import javafx.beans.property.BooleanProperty;
@@ -11,6 +12,7 @@ import javafx.scene.Group;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
@@ -42,9 +44,16 @@ public class CanvasController {
         // 3. Canvas Events (Zoom & Panning)
         drawingCanvas.setOnScroll(camera::handleZoom);
 
+        // Im CanvasController.java
         drawingCanvas.setOnMousePressed(e -> {
-            drawingCanvas.setCursor(Cursor.CLOSED_HAND);
-            camera.startPan(e);
+            if (e.getButton() == MouseButton.SECONDARY) {
+                // RECHTSKLICK: Gelben Punkt erstellen
+                createYellowMovableDot(e);
+            } else if (e.getButton() == MouseButton.PRIMARY) {
+                // LINKSKLICK: Kamera-Panning starten
+                drawingCanvas.setCursor(Cursor.CLOSED_HAND);
+                camera.startPan(e);
+            }
         });
 
         drawingCanvas.setOnMouseDragged(camera::updatePan);
@@ -100,5 +109,27 @@ public class CanvasController {
 
         event.setDropCompleted(true);
         event.consume();
+    }
+
+    private void createYellowMovableDot(MouseEvent e) {
+        // Punkt erstellen
+        ConnectionDot yellowDot = new ConnectionDot("FREE_DOT", zoomGroup);
+        yellowDot.getNode().setFill(Color.YELLOW);
+        yellowDot.getNode().setStroke(Color.BLACK);
+
+        // Position relativ zur zoomGroup setzen
+        Point2D localPos = zoomGroup.sceneToLocal(e.getSceneX(), e.getSceneY());
+        yellowDot.getNode().setCenterX(localPos.getX());
+        yellowDot.getNode().setCenterY(localPos.getY());
+
+        // Bewegungs-Logik mit LINKS hinzufügen
+        yellowDot.getNode().setOnMouseDragged(event -> {
+            if (event.isPrimaryButtonDown()) {
+                Point2D dragPos = zoomGroup.sceneToLocal(event.getSceneX(), event.getSceneY());
+                yellowDot.getNode().setCenterX(dragPos.getX());
+                yellowDot.getNode().setCenterY(dragPos.getY());
+            }
+            event.consume();
+        });
     }
 }
