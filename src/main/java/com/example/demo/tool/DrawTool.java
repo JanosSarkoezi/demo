@@ -1,6 +1,7 @@
 package com.example.demo.tool;
 
 import com.example.demo.controller.ToolbarController.ToolType; // Enum importieren
+import com.example.demo.model.SelectionModel;
 import com.example.demo.ui.CircleAdapter;
 import com.example.demo.ui.RectangleAdapter;
 import com.example.demo.ui.ShapeAdapter;
@@ -15,9 +16,11 @@ import javafx.scene.shape.Shape;
 
 public class DrawTool implements Tool {
     private final ToolType toolType;
+    private final SelectionModel selectionModel;
 
-    public DrawTool(ToolType toolType) {
+    public DrawTool(ToolType toolType, SelectionModel selectionModel) {
         this.toolType = toolType;
+        this.selectionModel = selectionModel;
     }
 
     @Override
@@ -49,6 +52,7 @@ public class DrawTool implements Tool {
                 return;
             }
 
+            selectionModel.setSelectedAdapter(adapter);
             shape.setUserData(adapter); // Adapter für spätere Selektion/Resize speichern
             shape.setStroke(Color.BLACK);
             shape.setStrokeWidth(3);

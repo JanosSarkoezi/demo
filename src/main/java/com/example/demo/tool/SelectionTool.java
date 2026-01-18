@@ -1,5 +1,7 @@
 package com.example.demo.tool;
 
+import com.example.demo.model.SelectionModel;
+import com.example.demo.ui.ResizeHandle;
 import com.example.demo.ui.ShapeAdapter;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
@@ -7,85 +9,140 @@ import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Shape;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SelectionTool implements Tool {
     private javafx.scene.Node target = null;
-    private Point2D currentMouseInWorld = null;
     private ShapeAdapter currentAdapter = null;
+    private String activeHandleName = null;
 
-    // Anker-Variablen für stabiles Verschieben/Snapping
     private double anchorX;
     private double anchorY;
-
     private final double gridSize = 40.0;
 
-    @Override
-    public String getName() {
-        return "MOVE & PAN (Objekt oder Welt)";
+    private final List<ResizeHandle> handles = new ArrayList<>();
+    private final Group handleLayer = new Group();
+    private final SelectionModel selectionModel;
+
+    public SelectionTool(SelectionModel selectionModel) {
+        this.selectionModel = selectionModel;
+
+        // WICHTIG: Beobachte das Modell. Wenn die Auswahl null wird, lösche Handles.
+        this.selectionModel.selectedAdapterProperty().addListener((obs, oldV, newV) -> {
+            if (newV == null) {
+                handleLayer.getChildren().clear();
+            } else {
+                // optional: Handles sofort für neues Objekt zeichnen
+            }
+        });
     }
+
+    @Override
+    public String getName() { return "SELECTION (Move & Resize)"; }
 
     @Override
     public void handle(MouseEvent event, Pane canvas, Group world) {
-        currentMouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+        Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
 
         if (event.getEventType() == MouseEvent.MOUSE_PRESSED) {
-            handleMousePressed(event, canvas, world);
-        } else if (event.getEventType() == MouseEvent.MOUSE_DRAGGED && target != null) {
-            handleMouseDragged(event, canvas, world);
+            handleMousePressed(event, canvas, world, mouseInWorld);
+        } else if (event.getEventType() == MouseEvent.MOUSE_DRAGGED) {
+            handleMouseDragged(event, canvas, world, mouseInWorld);
         } else if (event.getEventType() == MouseEvent.MOUSE_RELEASED) {
-            handleMouseReleased(event, canvas, world);
+            handleMouseReleased(canvas);
         }
     }
 
-    private void handleMousePressed(MouseEvent event, Pane canvas, Group world) {
-        if (event.getTarget() instanceof Shape s) {
+    private void handleMousePressed(MouseEvent event, Pane canvas, Group world, Point2D mouseInWorld) {
+        // 1. Klick auf ein Handle?
+        if (event.getTarget() instanceof javafx.scene.shape.Rectangle r && r.getUserData() instanceof String handlePos) {
+            activeHandleName = handlePos;
+            event.consume();
+            return;
+        }
+
+        // 2. Klick auf ein Shape?
+        if (event.getTarget() instanceof Shape s && s.getUserData() instanceof ShapeAdapter adapter) {
             target = s;
+            currentAdapter = adapter;
 
-            Object data = s.getUserData();
-            if (data instanceof ShapeAdapter adapter) {
-                currentAdapter = adapter;
+            // Anker für das Verschieben (Zentrumsbasiert)
+            Point2D center = currentAdapter.getCenter();
+            anchorX = center.getX() - mouseInWorld.getX();
+            anchorY = center.getY() - mouseInWorld.getY();
 
-                Point2D center = currentAdapter.getCenter();
-                anchorX = center.getX() - currentMouseInWorld.getX();
-                anchorY = center.getY() - currentMouseInWorld.getY();
-            }
-
+            showHandles(world);
             target.setCursor(Cursor.CLOSED_HAND);
             target.toFront();
+            handleLayer.toFront();
         } else {
+            // 3. Klick auf Hintergrund (Panning)
             target = world;
+            currentAdapter = null;
+            clearHandles(world);
+            target = world;
+
             // Für das Panning speichern wir den Klick-Punkt in Scene-Koordinaten
             anchorX = event.getSceneX() - world.getTranslateX();
             anchorY = event.getSceneY() - world.getTranslateY();
             canvas.setCursor(Cursor.CLOSED_HAND);
         }
+        selectionModel.setSelectedAdapter(currentAdapter);
         event.consume();
     }
 
-    private void handleMouseDragged(MouseEvent event, Pane canvas, Group world) {
-        if (target == world) {
+    private void handleMouseDragged(MouseEvent event, Pane canvas, Group world, Point2D mouseInWorld) {
+        if (activeHandleName != null && currentAdapter != null) {
+            // RESIZING
+            currentAdapter.resize(activeHandleName, mouseInWorld);
+            updateHandlePositions();
+        } else if (target == world) {
             // PANNING: Absolute Positionierung der Welt relativ zur Scene
             target.setTranslateX(event.getSceneX() - anchorX);
             target.setTranslateY(event.getSceneY() - anchorY);
         } else if (currentAdapter != null) {
-            // 1. Theoretisches neues Zentrum (roh) unter Berücksichtigung des Ankers
-            double rawCenterX = currentMouseInWorld.getX() + anchorX;
-            double rawCenterY = currentMouseInWorld.getY() + anchorY;
+            // MOVING mit Snapping
+            double rawX = mouseInWorld.getX() + anchorX;
+            double rawY = mouseInWorld.getY() + anchorY;
 
-            // 2. Snapping auf das Zentrum anwenden (Gitter-Logik)
-            double snappedX = Math.round(rawCenterX / gridSize) * gridSize;
-            double snappedY = Math.round(rawCenterY / gridSize) * gridSize;
-
-            // 3. Setzen über den Adapter (deine RectangleAdapter-Logik)
-            currentAdapter.setCenter(snappedX, snappedY);
+            currentAdapter.setCenter(
+                    Math.round(rawX / gridSize) * gridSize,
+                    Math.round(rawY / gridSize) * gridSize
+            );
+            updateHandlePositions();
         }
     }
 
-    private void handleMouseReleased(MouseEvent event, Pane canvas, Group world) {
-        if (target != null) {
-            target.setCursor(Cursor.DEFAULT);
+    private void showHandles(Group world) {
+        clearHandles(world);
+        if (currentAdapter == null) return;
+
+        for (String name : currentAdapter.getHandleNames()) {
+            ResizeHandle h = new ResizeHandle(name, currentAdapter.getHandleCursor(name), handleLayer);
+            handles.add(h);
         }
+        updateHandlePositions();
+        if (!world.getChildren().contains(handleLayer)) world.getChildren().add(handleLayer);
+    }
+
+    private void updateHandlePositions() {
+        if (currentAdapter == null) return;
+        for (ResizeHandle h : handles) {
+            Point2D pos = currentAdapter.getHandlePosition(h.getPosition());
+            h.getNode().setX(pos.getX() - ResizeHandle.HANDLE_SIZE / 2);
+            h.getNode().setY(pos.getY() - ResizeHandle.HANDLE_SIZE / 2);
+        }
+    }
+
+    private void clearHandles(Group world) {
+        handleLayer.getChildren().clear();
+        handles.clear();
+        world.getChildren().remove(handleLayer);
+    }
+
+    private void handleMouseReleased(Pane canvas) {
+        activeHandleName = null;
         canvas.setCursor(Cursor.DEFAULT);
-        target = null;
     }
 }

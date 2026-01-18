@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.model.SelectionModel;
 import com.example.demo.tool.SelectionTool;
 import com.example.demo.tool.Tool;
 import com.example.demo.ui.CanvasCamera;
@@ -24,8 +25,9 @@ import javafx.scene.shape.Rectangle;
 public class CanvasController {
     @FXML private Pane drawingCanvas;
     private final Group world = new Group();
-    private Tool currentTool = new SelectionTool();
+    private Tool currentTool;
     private CanvasCamera camera;
+    private SelectionModel selectionModel;
 
     // Wir speichern die Properties hier lokal, um sie neuen Shapes zuzuweisen
     private BooleanProperty snapToGridRef;
@@ -43,20 +45,23 @@ public class CanvasController {
         clip.heightProperty().bind(drawingCanvas.heightProperty());
         drawingCanvas.setClip(clip);
 
-        // Events delegieren
-        drawingCanvas.addEventHandler(MouseEvent.ANY, e -> currentTool.handle(e, drawingCanvas, world));
+        drawingCanvas.addEventHandler(MouseEvent.ANY, e -> {
+            if (currentTool != null) {
+                currentTool.handle(e, drawingCanvas, world);
+            }
+        });
 
-        // Zoom-Funktionalität
         drawingCanvas.addEventHandler(ScrollEvent.SCROLL, camera::handleZoom);
-
-        // 4. Drag & Drop Logik (für neue Kreise)
         drawingCanvas.setOnDragOver(this::handleCanvasDragOver);
         drawingCanvas.setOnDragDropped(this::handleCanvasDragDropped);
     }
 
-    public void injectProperties(BooleanProperty snap, BooleanProperty sticky) {
+    public void injectProperties(BooleanProperty snap, BooleanProperty sticky, SelectionModel model) {
         this.snapToGridRef = snap;
         this.stickyRef = sticky;
+
+        this.selectionModel = model;
+        this.currentTool = new SelectionTool(selectionModel);
     }
 
     private void startToolDrag(StackPane tool, String format, MouseEvent event) {

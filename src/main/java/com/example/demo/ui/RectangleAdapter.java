@@ -56,10 +56,12 @@ public class RectangleAdapter implements ShapeAdapter {
     @Override
     public Cursor getHandleCursor(String name) {
         return switch (name) {
-            case "NW", "SE" -> Cursor.NW_RESIZE;
-            case "NE", "SW" -> Cursor.NE_RESIZE;
-            case "N", "S"   -> Cursor.N_RESIZE;
-            case "E", "W"   -> Cursor.E_RESIZE;
+            case "NW" -> Cursor.NW_RESIZE;
+            case "SE" -> Cursor.SE_RESIZE;
+            case "NE" -> Cursor.NE_RESIZE;
+            case "SW" -> Cursor.SW_RESIZE;
+            case "N", "S" -> Cursor.N_RESIZE;
+            case "E", "W" -> Cursor.E_RESIZE;
             default -> Cursor.DEFAULT;
         };
     }
