@@ -7,7 +7,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-record DrawTool() implements com.example.demo.app.Tool {
+public class DrawTool implements Tool {
+    @Override
     public String getName() {
         return "ZEICHNEN (Klick auf Hintergrund)";
     }

@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.tool.MoveTool;
+import com.example.demo.tool.Tool;
 import com.example.demo.ui.CanvasCamera;
 import com.example.demo.ui.ConnectionDot;
 import com.example.demo.ui.DraggableCircle;
@@ -7,13 +9,12 @@ import com.example.demo.ui.DraggableRectangle;
 import javafx.beans.property.BooleanProperty;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
-import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -22,7 +23,8 @@ import javafx.scene.shape.Rectangle;
 
 public class CanvasController {
     @FXML private Pane drawingCanvas;
-    private final Group zoomGroup = new Group();
+    private final Group world = new Group();
+    private Tool currentTool = new MoveTool();
     private CanvasCamera camera;
 
     // Wir speichern die Properties hier lokal, um sie neuen Shapes zuzuweisen
@@ -32,8 +34,8 @@ public class CanvasController {
     @FXML
     public void initialize() {
         // 1. Hierarchie & Kamera Setup
-        drawingCanvas.getChildren().add(zoomGroup);
-        camera = new CanvasCamera(zoomGroup);
+        drawingCanvas.getChildren().add(world);
+        camera = new CanvasCamera(world);
 
         // 2. Clipping (Damit Inhalte nicht über den Rand ragen)
         Rectangle clip = new Rectangle();
@@ -41,24 +43,11 @@ public class CanvasController {
         clip.heightProperty().bind(drawingCanvas.heightProperty());
         drawingCanvas.setClip(clip);
 
-        // 3. Canvas Events (Zoom & Panning)
-        drawingCanvas.setOnScroll(camera::handleZoom);
+        // Events delegieren
+        drawingCanvas.addEventHandler(MouseEvent.ANY, e -> currentTool.handle(e, drawingCanvas, world));
 
-        // Im CanvasController.java
-        drawingCanvas.setOnMousePressed(e -> {
-            if (e.getButton() == MouseButton.SECONDARY) {
-                // RECHTSKLICK: Gelben Punkt erstellen
-                createYellowMovableDot(e);
-            } else if (e.getButton() == MouseButton.PRIMARY) {
-                // LINKSKLICK: Kamera-Panning starten
-                drawingCanvas.setCursor(Cursor.CLOSED_HAND);
-                camera.startPan(e);
-            }
-        });
-
-        drawingCanvas.setOnMouseDragged(camera::updatePan);
-
-        drawingCanvas.setOnMouseReleased(e -> drawingCanvas.setCursor(Cursor.DEFAULT));
+        // Zoom-Funktionalität
+        drawingCanvas.addEventHandler(ScrollEvent.SCROLL, camera::handleZoom);
 
         // 4. Drag & Drop Logik (für neue Kreise)
         drawingCanvas.setOnDragOver(this::handleCanvasDragOver);
@@ -87,24 +76,24 @@ public class CanvasController {
 
     private void handleCanvasDragDropped(DragEvent event) {
         String toolType = event.getDragboard().getString();
-        Point2D p = zoomGroup.sceneToLocal(event.getSceneX(), event.getSceneY());
+        Point2D p = world.sceneToLocal(event.getSceneX(), event.getSceneY());
 
         if ("NEW_CIRCLE".equals(toolType)) {
-            DraggableCircle circle = new DraggableCircle(p.getX(), p.getY(), 25, Color.DODGERBLUE, drawingCanvas, zoomGroup);
+            DraggableCircle circle = new DraggableCircle(p.getX(), p.getY(), 25, Color.DODGERBLUE, drawingCanvas, world);
 
             // BINDUNG: Der Helper des neuen Kreises hört auf die CheckBox
             circle.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridRef);
 
-            zoomGroup.getChildren().add(circle);
+            world.getChildren().add(circle);
 
         } else if ("NEW_RECT".equals(toolType)) {
-            DraggableRectangle rect = new DraggableRectangle(p.getX(), p.getY(), 50, 50, Color.RED, drawingCanvas, zoomGroup);
+            DraggableRectangle rect = new DraggableRectangle(p.getX(), p.getY(), 50, 50, Color.RED, drawingCanvas, world);
 
             // BINDUNG: Der Helper des neuen Rechtecks hört auf die CheckBox
             rect.getTransformHelper().snapToGridEnabledProperty().bind(snapToGridRef);
             rect.getTransformHelper().stickyEnabledProperty().bind(stickyRef);
 
-            zoomGroup.getChildren().add(rect);
+            world.getChildren().add(rect);
         }
 
         event.setDropCompleted(true);
@@ -113,19 +102,19 @@ public class CanvasController {
 
     private void createYellowMovableDot(MouseEvent e) {
         // Punkt erstellen
-        ConnectionDot yellowDot = new ConnectionDot("FREE_DOT", zoomGroup);
+        ConnectionDot yellowDot = new ConnectionDot("FREE_DOT", world);
         yellowDot.getNode().setFill(Color.YELLOW);
         yellowDot.getNode().setStroke(Color.BLACK);
 
         // Position relativ zur zoomGroup setzen
-        Point2D localPos = zoomGroup.sceneToLocal(e.getSceneX(), e.getSceneY());
+        Point2D localPos = world.sceneToLocal(e.getSceneX(), e.getSceneY());
         yellowDot.getNode().setCenterX(localPos.getX());
         yellowDot.getNode().setCenterY(localPos.getY());
 
         // Bewegungs-Logik mit LINKS hinzufügen
         yellowDot.getNode().setOnMouseDragged(event -> {
             if (event.isPrimaryButtonDown()) {
-                Point2D dragPos = zoomGroup.sceneToLocal(event.getSceneX(), event.getSceneY());
+                Point2D dragPos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
                 yellowDot.getNode().setCenterX(dragPos.getX());
                 yellowDot.getNode().setCenterY(dragPos.getY());
             }
