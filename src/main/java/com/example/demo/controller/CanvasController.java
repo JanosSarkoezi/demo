@@ -1,7 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.tool.DrawTool;
-import com.example.demo.tool.MoveTool;
+import com.example.demo.tool.SelectionTool;
 import com.example.demo.tool.Tool;
 import com.example.demo.ui.CanvasCamera;
 import com.example.demo.ui.ConnectionDot;
@@ -25,7 +24,7 @@ import javafx.scene.shape.Rectangle;
 public class CanvasController {
     @FXML private Pane drawingCanvas;
     private final Group world = new Group();
-    private Tool currentTool = new MoveTool();
+    private Tool currentTool = new SelectionTool();
     private CanvasCamera camera;
 
     // Wir speichern die Properties hier lokal, um sie neuen Shapes zuzuweisen

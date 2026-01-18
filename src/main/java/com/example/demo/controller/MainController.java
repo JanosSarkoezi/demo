@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.tool.DrawTool;
-import com.example.demo.tool.MoveTool;
+import com.example.demo.tool.SelectionTool;
 import javafx.fxml.FXML;
 
 public class MainController {
@@ -21,7 +21,7 @@ public class MainController {
                 // Setze das aktuelle Tool auf eine neue Instanz von DrawTool
                 canvasController.setCurrentTool(new DrawTool(newTool));
             } else {
-                canvasController.setCurrentTool(new MoveTool());
+                canvasController.setCurrentTool(new SelectionTool());
             }
         });
     }

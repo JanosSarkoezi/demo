@@ -2,7 +2,7 @@ package com.example.demo.app;
 
 import com.example.demo.controller.ToolbarController;
 import com.example.demo.tool.DrawTool;
-import com.example.demo.tool.MoveTool;
+import com.example.demo.tool.SelectionTool;
 import com.example.demo.tool.Tool;
 import com.example.demo.ui.CanvasCamera;
 import javafx.application.Application;
@@ -48,7 +48,7 @@ public class DrawingApp extends Application {
         // Key-Steuerung via Filter (fängt Events ab, bevor Nodes sie konsumieren)
         scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
             if (e.getCode() == KeyCode.D) currentTool = new DrawTool(ToolbarController.ToolType.CIRCLE);
-            if (e.getCode() == KeyCode.M) currentTool = new MoveTool();
+            if (e.getCode() == KeyCode.M) currentTool = new SelectionTool();
             updateStatus();
         });
 

@@ -8,7 +8,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Shape;
 
-public class MoveTool implements Tool {
+public class SelectionTool implements Tool {
     private javafx.scene.Node target = null;
     private Point2D currentMouseInWorld = null;
     private ShapeAdapter currentAdapter = null;
