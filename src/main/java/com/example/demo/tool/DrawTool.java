@@ -1,5 +1,6 @@
 package com.example.demo.tool;
 
+import com.example.demo.ui.CircleAdapter;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
@@ -19,6 +20,10 @@ public class DrawTool implements Tool {
             // Umrechnung: Wo ist der Klick relativ zur skalierten/verschobenen Welt?
             Point2D pos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
             Circle c = new Circle(pos.getX(), pos.getY(), 20, Color.CYAN);
+
+            CircleAdapter adapter = new CircleAdapter(c);
+            c.setUserData(adapter);
+
             c.setStroke(Color.WHITE);
             world.getChildren().add(c);
         }

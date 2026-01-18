@@ -5,7 +5,6 @@ import javafx.scene.shape.Shape;
 import javafx.scene.Cursor;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ShapeAdapter {
 

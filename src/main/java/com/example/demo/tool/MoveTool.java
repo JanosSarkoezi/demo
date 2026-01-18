@@ -1,5 +1,6 @@
 package com.example.demo.tool;
 
+import com.example.demo.ui.ShapeAdapter;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
@@ -10,6 +11,7 @@ import javafx.scene.shape.Shape;
 public class MoveTool implements Tool {
     private javafx.scene.Node target = null;
     private Point2D currentMouseInWorld = null;
+    private ShapeAdapter currentAdapter = null;
 
     // Anker-Variablen für stabiles Verschieben/Snapping
     private double anchorX;
@@ -38,9 +40,15 @@ public class MoveTool implements Tool {
     private void handleMousePressed(MouseEvent event, Pane canvas, Group world) {
         if (event.getTarget() instanceof Shape s) {
             target = s;
-            // ANKER: Abstand vom Mauszeiger zum Ursprung des Objekts in Welt-Koordinaten
-            anchorX = target.getTranslateX() - currentMouseInWorld.getX();
-            anchorY = target.getTranslateY() - currentMouseInWorld.getY();
+
+            Object data = s.getUserData();
+            if (data instanceof ShapeAdapter adapter) {
+                currentAdapter = adapter;
+
+                Point2D center = currentAdapter.getCenter();
+                anchorX = center.getX() - currentMouseInWorld.getX();
+                anchorY = center.getY() - currentMouseInWorld.getY();
+            }
 
             target.setCursor(Cursor.CLOSED_HAND);
             target.toFront();
@@ -59,17 +67,17 @@ public class MoveTool implements Tool {
             // PANNING: Absolute Positionierung der Welt relativ zur Scene
             target.setTranslateX(event.getSceneX() - anchorX);
             target.setTranslateY(event.getSceneY() - anchorY);
-        } else {
-            // OBJEKT-MOVE: Theoretische neue Position basierend auf Anker
-            double rawX = currentMouseInWorld.getX() + anchorX;
-            double rawY = currentMouseInWorld.getY() + anchorY;
+        } else if (currentAdapter != null) {
+            // 1. Theoretisches neues Zentrum (roh) unter Berücksichtigung des Ankers
+            double rawCenterX = currentMouseInWorld.getX() + anchorX;
+            double rawCenterY = currentMouseInWorld.getY() + anchorY;
 
-            // SNAP-LOGIK: Wir runden die Zielposition, nicht das Delta
-            double snappedX = Math.round(rawX / gridSize) * gridSize;
-            double snappedY = Math.round(rawY / gridSize) * gridSize;
+            // 2. Snapping auf das Zentrum anwenden (Gitter-Logik)
+            double snappedX = Math.round(rawCenterX / gridSize) * gridSize;
+            double snappedY = Math.round(rawCenterY / gridSize) * gridSize;
 
-            target.setTranslateX(snappedX);
-            target.setTranslateY(snappedY);
+            // 3. Setzen über den Adapter (deine RectangleAdapter-Logik)
+            currentAdapter.setCenter(snappedX, snappedY);
         }
     }
 
