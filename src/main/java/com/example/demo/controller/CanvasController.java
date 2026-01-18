@@ -4,20 +4,12 @@ import com.example.demo.model.SelectionModel;
 import com.example.demo.tool.SelectionTool;
 import com.example.demo.tool.Tool;
 import com.example.demo.ui.CanvasCamera;
-import com.example.demo.ui.ConnectionDot;
 import javafx.beans.property.BooleanProperty;
 import javafx.fxml.FXML;
-import javafx.geometry.Point2D;
 import javafx.scene.Group;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 public class CanvasController {
@@ -43,11 +35,9 @@ public class CanvasController {
         clip.heightProperty().bind(drawingCanvas.heightProperty());
         drawingCanvas.setClip(clip);
 
-        drawingCanvas.addEventHandler(MouseEvent.ANY, e -> {
-            if (currentTool != null) {
-                currentTool.handle(e, drawingCanvas, world);
-            }
-        });
+        drawingCanvas.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> currentTool.onMousePressed(e, drawingCanvas, world));
+        drawingCanvas.addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> currentTool.onMouseDragged(e, drawingCanvas, world));
+        drawingCanvas.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> currentTool.onMouseReleased(e, drawingCanvas, world));
 
         drawingCanvas.addEventHandler(ScrollEvent.SCROLL, camera::handleZoom);
     }
@@ -58,14 +48,6 @@ public class CanvasController {
 
         this.selectionModel = model;
         this.currentTool = new SelectionTool(selectionModel);
-    }
-
-    private void startToolDrag(StackPane tool, String format, MouseEvent event) {
-        Dragboard db = tool.startDragAndDrop(TransferMode.COPY);
-        ClipboardContent content = new ClipboardContent();
-        content.putString(format);
-        db.setContent(content);
-        event.consume();
     }
 
     public void setCurrentTool(Tool currentTool) {

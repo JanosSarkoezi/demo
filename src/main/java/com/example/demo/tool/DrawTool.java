@@ -29,8 +29,8 @@ public class DrawTool implements Tool {
     }
 
     @Override
-    public void handle(MouseEvent event, Pane canvas, Group world) {
-        if (event.getEventType() == MouseEvent.MOUSE_CLICKED && event.getTarget() == canvas) {
+    public void onMouseReleased(MouseEvent event, Pane canvas, Group world) {
+        if (event.getTarget() == canvas) {
             Point2D pos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
 
             Shape shape;

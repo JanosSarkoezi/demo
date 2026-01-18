@@ -42,19 +42,8 @@ public class SelectionTool implements Tool {
     public String getName() { return "SELECTION (Move & Resize)"; }
 
     @Override
-    public void handle(MouseEvent event, Pane canvas, Group world) {
+    public void onMousePressed(MouseEvent event, Pane canvas, Group world) {
         Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
-
-        if (event.getEventType() == MouseEvent.MOUSE_PRESSED) {
-            handleMousePressed(event, canvas, world, mouseInWorld);
-        } else if (event.getEventType() == MouseEvent.MOUSE_DRAGGED) {
-            handleMouseDragged(event, canvas, world, mouseInWorld);
-        } else if (event.getEventType() == MouseEvent.MOUSE_RELEASED) {
-            handleMouseReleased(canvas);
-        }
-    }
-
-    private void handleMousePressed(MouseEvent event, Pane canvas, Group world, Point2D mouseInWorld) {
         // 1. Klick auf ein Handle?
         if (event.getTarget() instanceof javafx.scene.shape.Rectangle r && r.getUserData() instanceof String handlePos) {
             activeHandleName = handlePos;
@@ -92,7 +81,10 @@ public class SelectionTool implements Tool {
         event.consume();
     }
 
-    private void handleMouseDragged(MouseEvent event, Pane canvas, Group world, Point2D mouseInWorld) {
+    @Override
+    public void onMouseDragged(MouseEvent event, Pane canvas, Group world) {
+        Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+
         if (activeHandleName != null && currentAdapter != null) {
             // RESIZING
             currentAdapter.resize(activeHandleName, mouseInWorld);
@@ -112,6 +104,12 @@ public class SelectionTool implements Tool {
             );
             updateHandlePositions();
         }
+    }
+
+    @Override
+    public void onMouseReleased(MouseEvent event, Pane canvas, Group world) {
+        activeHandleName = null;
+        canvas.setCursor(Cursor.DEFAULT);
     }
 
     private void showHandles(Group world) {
@@ -139,10 +137,5 @@ public class SelectionTool implements Tool {
         handleLayer.getChildren().clear();
         handles.clear();
         world.getChildren().remove(handleLayer);
-    }
-
-    private void handleMouseReleased(Pane canvas) {
-        activeHandleName = null;
-        canvas.setCursor(Cursor.DEFAULT);
     }
 }
