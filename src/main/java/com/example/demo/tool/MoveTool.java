@@ -9,8 +9,13 @@ import javafx.scene.shape.Shape;
 
 public class MoveTool implements Tool {
     private javafx.scene.Node target = null;
-    private Point2D lastMouseInWorld = null;
     private Point2D currentMouseInWorld = null;
+
+    // Anker-Variablen für stabiles Verschieben/Snapping
+    private double anchorX;
+    private double anchorY;
+
+    private final double gridSize = 40.0;
 
     @Override
     public String getName() {
@@ -19,7 +24,6 @@ public class MoveTool implements Tool {
 
     @Override
     public void handle(MouseEvent event, Pane canvas, Group world) {
-        // Wir rechnen die aktuelle Mausposition IMMER in Welt-Koordinaten um
         currentMouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
 
         if (event.getEventType() == MouseEvent.MOUSE_PRESSED) {
@@ -32,46 +36,48 @@ public class MoveTool implements Tool {
     }
 
     private void handleMousePressed(MouseEvent event, Pane canvas, Group world) {
-        lastMouseInWorld = currentMouseInWorld;
-
         if (event.getTarget() instanceof Shape s) {
             target = s;
+            // ANKER: Abstand vom Mauszeiger zum Ursprung des Objekts in Welt-Koordinaten
+            anchorX = target.getTranslateX() - currentMouseInWorld.getX();
+            anchorY = target.getTranslateY() - currentMouseInWorld.getY();
+
             target.setCursor(Cursor.CLOSED_HAND);
+            target.toFront();
         } else {
             target = world;
+            // Für das Panning speichern wir den Klick-Punkt in Scene-Koordinaten
+            anchorX = event.getSceneX() - world.getTranslateX();
+            anchorY = event.getSceneY() - world.getTranslateY();
             canvas.setCursor(Cursor.CLOSED_HAND);
         }
         event.consume();
     }
 
     private void handleMouseDragged(MouseEvent event, Pane canvas, Group world) {
-        // Delta im Welt-Koordinatensystem (Zoom/Pan bereits "herausgerechnet")
-        double deltaX = currentMouseInWorld.getX() - lastMouseInWorld.getX();
-        double deltaY = currentMouseInWorld.getY() - lastMouseInWorld.getY();
-
         if (target == world) {
-            // BEI PANNING: Hier müssen wir einen Trick anwenden.
-            // Da wir die Welt selbst bewegen, während wir ihre Koordinaten messen,
-            // nutzen wir für das Panning besser die Scene-Deltas.
-            double sceneDeltaX = event.getSceneX() - world.localToScene(lastMouseInWorld).getX();
-            double sceneDeltaY = event.getSceneY() - world.localToScene(lastMouseInWorld).getY();
-
-            target.setTranslateX(target.getTranslateX() + sceneDeltaX);
-            target.setTranslateY(target.getTranslateY() + sceneDeltaY);
+            // PANNING: Absolute Positionierung der Welt relativ zur Scene
+            target.setTranslateX(event.getSceneX() - anchorX);
+            target.setTranslateY(event.getSceneY() - anchorY);
         } else {
-            // BEI OBJEKTEN: Das Welt-Delta funktioniert perfekt!
-            target.setTranslateX(target.getTranslateX() + deltaX);
-            target.setTranslateY(target.getTranslateY() + deltaY);
-        }
+            // OBJEKT-MOVE: Theoretische neue Position basierend auf Anker
+            double rawX = currentMouseInWorld.getX() + anchorX;
+            double rawY = currentMouseInWorld.getY() + anchorY;
 
-        // WICHTIG: Nach der Bewegung die Position neu berechnen
-        lastMouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+            // SNAP-LOGIK: Wir runden die Zielposition, nicht das Delta
+            double snappedX = Math.round(rawX / gridSize) * gridSize;
+            double snappedY = Math.round(rawY / gridSize) * gridSize;
+
+            target.setTranslateX(snappedX);
+            target.setTranslateY(snappedY);
+        }
     }
 
     private void handleMouseReleased(MouseEvent event, Pane canvas, Group world) {
-        target.setCursor(Cursor.DEFAULT);
+        if (target != null) {
+            target.setCursor(Cursor.DEFAULT);
+        }
         canvas.setCursor(Cursor.DEFAULT);
-
         target = null;
     }
 }
