@@ -8,49 +8,39 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
 public class IdleState implements SelectionState {
-    // In IdleState.java
     @Override
     public void onMousePressed(MouseEvent event, SelectionTool tool, Group world) {
         Node hit = event.getPickResult().getIntersectedNode();
-
-        // 1. Logik-Entscheidung: Welcher State ist der nächste?
         SelectionState nextState = null;
 
-        if (event.isControlDown()) {
-            if (tool.isConnectionDot(hit)) {
-                nextState = new ConnectionState((Circle) hit);
-            } else if (tool.isShape(hit)) {
-                ShapeAdapter sa = (ShapeAdapter) hit.getUserData();
-                tool.setCurrentAdapter(sa);
+        // Wenn wir ein Handle treffen, wollen wir IMMER resizen, egal ob Alt gedrückt ist oder nicht.
+        if (tool.isHandle(hit)) {
+            nextState = new ResizeState((Rectangle) hit);
+        } else if (tool.isConnectionDot(hit)) {
+            nextState = new ConnectionState((Circle) hit);
+        } else if (tool.isShape(hit)) {
+            ShapeAdapter sa = (ShapeAdapter) hit.getUserData();
+            tool.setCurrentAdapter(sa);
+
+            if (event.isControlDown()) {
                 tool.showConnectionPoints(world);
-                return; // WICHTIG: Hier abbrechen, kein nextState!
-            }
-        } else if (event.isAltDown()) {
-            if (tool.isHandle(hit)) {
-                nextState = new ResizeState((Rectangle) hit);
-            } else if (tool.isShape(hit)) {
-                ShapeAdapter sa = (ShapeAdapter) hit.getUserData();
-                tool.setCurrentAdapter(sa);
+                return; // Wir bleiben im Idle, Dots sind jetzt da
+            } else if (event.isAltDown()) {
                 tool.showHandles(world);
-                return; // WICHTIG: Hier abbrechen!
-            }
-        } else {
-            if (tool.isShape(hit)) {
-                ShapeAdapter sa = (ShapeAdapter) hit.getUserData();
-                tool.setCurrentAdapter(sa);
+                return; // Wir bleiben im Idle, Handles sind jetzt da
+            } else {
+                // Normaler Klick auf Shape -> Bewegen
                 nextState = new MoveState(sa);
                 tool.clearHandlesFromUI();
                 tool.clearConnectionsFromUI();
-            } else {
-                nextState = new PanningState();
             }
+        } else {
+            nextState = new PanningState();
         }
 
-        // 2. State-Wechsel vollziehen
-        if (nextState != null) {
-            tool.setCurrentState(nextState);
-            nextState.onMousePressed(event, tool, world);
-        }
+        tool.setCurrentState(nextState);
+        nextState.onMousePressed(event, tool, world);
+        event.consume(); // Sauber das Event stoppen
     }
 
     @Override
