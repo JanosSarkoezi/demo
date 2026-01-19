@@ -1,6 +1,7 @@
 package com.example.demo.tool;
 
 import com.example.demo.model.SelectionModel;
+import com.example.demo.ui.ConnectionDot;
 import com.example.demo.ui.ResizeHandle;
 import com.example.demo.ui.ShapeAdapter;
 import javafx.geometry.Point2D;
@@ -9,9 +10,12 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SelectionTool implements Tool {
     private final SelectionModel selectionModel;
@@ -23,8 +27,10 @@ public class SelectionTool implements Tool {
     private double anchorY;
     private final double gridSize = 40.0;
 
-    private final List<ResizeHandle> handles = new ArrayList<>();
+    private final Map<String, Rectangle> handleMap = new HashMap<>();
+    private final Map<String, Circle> connectionMap = new HashMap<>();
     private final Group handleLayer = new Group();
+    private final Group connectionLayer = new Group();
 
     public SelectionTool(SelectionModel selectionModel) {
         this.selectionModel = selectionModel;
@@ -92,14 +98,20 @@ public class SelectionTool implements Tool {
         anchorX = center.getX() - mouseInWorld.getX();
         anchorY = center.getY() - mouseInWorld.getY();
 
-        if (event.isAltDown()) {
+        if (event.isControlDown()) {
+            clearHandlesFromUI();
+            showConnectionPoints(world);
+        } else if (event.isAltDown()) {
+            clearConnectionsFromUI();
             showHandles(world);
         } else {
             clearHandlesFromUI();
+            clearConnectionsFromUI();
         }
 
         shape.toFront();
         handleLayer.toFront();
+        connectionLayer.toFront();
     }
 
     private void handlePanningStart(MouseEvent event, Pane canvas, Group world) {
@@ -107,6 +119,7 @@ public class SelectionTool implements Tool {
         this.target = world;
         selectionModel.clear();
         clearHandlesFromUI();
+        clearConnectionsFromUI();
 
         anchorX = event.getSceneX() - world.getTranslateX();
         anchorY = event.getSceneY() - world.getTranslateY();
@@ -122,6 +135,7 @@ public class SelectionTool implements Tool {
         if (activeHandleName != null && currentAdapter != null) {
             currentAdapter.resize(activeHandleName, mouseInWorld);
             updateHandlePositions();
+            updateConnectionPointPositions();
         } else if (target == world) {
             world.setTranslateX(event.getSceneX() - anchorX);
             world.setTranslateY(event.getSceneY() - anchorY);
@@ -133,6 +147,7 @@ public class SelectionTool implements Tool {
                     Math.round(rawY / gridSize) * gridSize
             );
             updateHandlePositions();
+            updateConnectionPointPositions();
         }
     }
 
@@ -151,25 +166,59 @@ public class SelectionTool implements Tool {
         if (currentAdapter == null) return;
 
         for (String name : currentAdapter.getHandleNames()) {
-            new ResizeHandle(name, currentAdapter.getHandleCursor(name), handleLayer);
+            ResizeHandle rh = new ResizeHandle(name, currentAdapter.getHandleCursor(name), handleLayer);
+            handleMap.put(name, rh.getNode());
         }
         updateHandlePositions();
         if (!world.getChildren().contains(handleLayer)) world.getChildren().add(handleLayer);
     }
 
     private void updateHandlePositions() {
-        if (currentAdapter == null || handleLayer.getChildren().isEmpty()) return;
+        if (currentAdapter == null || handleMap.isEmpty()) return;
 
-        // Da wir ResizeHandle nicht mehr in einer Liste speichern,
-        // iterieren wir direkt über die Nodes der Gruppe
-        for (Node node : handleLayer.getChildren()) {
-            if (node instanceof javafx.scene.shape.Rectangle rect) {
-                String posName = (String) rect.getUserData();
-                Point2D pos = currentAdapter.getHandlePosition(posName);
+        // Symmetrie: Wir nutzen exakt dieselben Namen wie beim Erstellen
+        for (String name : currentAdapter.getHandleNames()) {
+            Rectangle rect = handleMap.get(name);
+            if (rect != null) {
+                Point2D pos = currentAdapter.getHandlePosition(name);
                 rect.setX(pos.getX() - ResizeHandle.HANDLE_SIZE / 2);
                 rect.setY(pos.getY() - ResizeHandle.HANDLE_SIZE / 2);
             }
         }
+    }
+
+    private void showConnectionPoints(Group world) {
+        clearConnectionsFromUI();
+        if (currentAdapter == null) return;
+
+        // Wir holen die Punkte vom Adapter (z.B. N, S, E, W)
+        for (String name : currentAdapter.getConnectionPointNames()) {
+            ConnectionDot dot = new ConnectionDot(name, connectionLayer);
+            connectionMap.put(name, dot.getNode());
+        }
+
+        updateConnectionPointPositions();
+
+        if (!world.getChildren().contains(connectionLayer)) {
+            world.getChildren().add(connectionLayer);
+        }
+    }
+
+    private void updateConnectionPointPositions() {
+        if (currentAdapter == null || connectionMap.isEmpty()) return;
+
+        for (String name : currentAdapter.getConnectionPointNames()) {
+            Circle dotCircle = connectionMap.get(name);
+            if (dotCircle != null) {
+                Point2D pos = currentAdapter.getConnectionPointPosition(name);
+                dotCircle.setCenterX(pos.getX());
+                dotCircle.setCenterY(pos.getY());
+            }
+        }
+    }
+
+    private void clearConnectionsFromUI() {
+        connectionLayer.getChildren().clear();
     }
 
     private void clearHandlesFromUI() {
