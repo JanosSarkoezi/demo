@@ -19,6 +19,7 @@ public class ConnectionDot {
 
         // Cursor-Feedback: Hier beginnt oder endet eine Linie
         this.circle.setCursor(javafx.scene.Cursor.CROSSHAIR);
+        this.circle.getProperties().put("pointName", pointName);
 
         parent.getChildren().add(circle);
     }

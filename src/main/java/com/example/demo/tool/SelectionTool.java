@@ -4,6 +4,7 @@ import com.example.demo.model.SelectionModel;
 import com.example.demo.ui.ConnectionDot;
 import com.example.demo.ui.ResizeHandle;
 import com.example.demo.ui.ShapeAdapter;
+import com.example.demo.ui.SmartConnection;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
@@ -31,6 +32,8 @@ public class SelectionTool implements Tool {
     private final Map<String, Circle> connectionMap = new HashMap<>();
     private final Group handleLayer = new Group();
     private final Group connectionLayer = new Group();
+
+    private SmartConnection activeConnection = null;
 
     public SelectionTool(SelectionModel selectionModel) {
         this.selectionModel = selectionModel;
@@ -71,6 +74,22 @@ public class SelectionTool implements Tool {
             handleShapeClick(event, s, adapter, mouseInWorld, world);
             setStatus(1, mouseInWorld);
             canvas.setCursor(Cursor.CLOSED_HAND);
+            event.consume();
+            return;
+        }
+
+        if (isConnectionDot(event.getTarget())) {
+            Circle dot = (Circle) event.getTarget();
+            Point2D startPos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+
+            // Neue Verbindung als Gummiband erstellen
+            activeConnection = new SmartConnection(startPos, startPos);
+
+            // Metadaten für die spätere feste Bindung speichern
+            activeConnection.setStartAdapter(currentAdapter);
+            activeConnection.setStartPointName((String) dot.getProperties().get("pointName"));
+
+            world.getChildren().add(activeConnection);
             event.consume();
             return;
         }
@@ -132,6 +151,19 @@ public class SelectionTool implements Tool {
 
         setStatus(6, mouseInWorld);
 
+        if (activeConnection != null) {
+            Point2D mousePos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+            Point2D startPos = activeConnection.getStartAdapter().getConnectionPointPosition(activeConnection.getStartPointName());
+
+            activeConnection.updatePoints(startPos, mousePos);
+
+            // OPTIONAL: "Snap" an ein Ziel-Shape unter der Maus
+            checkTargetSnap(event, world);
+
+            event.consume();
+            return;
+        }
+
         if (activeHandleName != null && currentAdapter != null) {
             currentAdapter.resize(activeHandleName, mouseInWorld);
             updateHandlePositions();
@@ -148,6 +180,7 @@ public class SelectionTool implements Tool {
             );
             updateHandlePositions();
             updateConnectionPointPositions();
+            updateSmartConnections();
         }
     }
 
@@ -156,9 +189,72 @@ public class SelectionTool implements Tool {
         Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
         setStatus(7, mouseInWorld);
 
+        if (activeConnection != null) {
+            Circle hitDot = findDotAt(mouseInWorld);
+
+            if (hitDot != null) {
+                // TREFFER!
+                String endPointName = (String) hitDot.getProperties().get("pointName");
+
+                // Wir finden den Adapter des Ziel-Shapes
+                // (In der Regel ist das der aktuell "gepufferte" Adapter vom Hovern)
+                activeConnection.setEndAdapter(currentAdapter);
+                activeConnection.setEndPointName(endPointName);
+
+                // Finales Update der Linien-Endpunkte
+                activeConnection.updatePoints(
+                        activeConnection.getStartAdapter().getConnectionPointPosition(activeConnection.getStartPointName()),
+                        activeConnection.getEndAdapter().getConnectionPointPosition(endPointName)
+                );
+
+                // Hier solltest du die Verbindung in einer Liste im SelectionModel speichern!
+                // selectionModel.addConnection(activeConnection);
+                selectionModel.addConnection(activeConnection);
+
+                selectionModel.setStatusMessage("Verbindung erstellt!");
+            } else {
+                // Daneben gegangen: Linie wieder entfernen
+                world.getChildren().remove(activeConnection);
+                selectionModel.setStatusMessage("Verbindung abgebrochen.");
+            }
+            activeConnection = null;
+        }
+
         activeHandleName = null;
         target = null;
         canvas.setCursor(Cursor.DEFAULT);
+    }
+
+    private void checkTargetSnap(MouseEvent event, Group world) {
+        // Finde heraus, was unter der Maus liegt (außer der Linie selbst)
+        Node hit = event.getPickResult().getIntersectedNode();
+
+        if (hit instanceof Shape s && s.getUserData() instanceof ShapeAdapter targetAdapter) {
+            if (targetAdapter != activeConnection.getStartAdapter()) {
+                // Zeige die Punkte des potenziellen Ziels!
+                // Wir "faken" eine temporäre Selektion nur für die Anzeige der Punkte
+                this.currentAdapter = targetAdapter;
+                showConnectionPoints(world);
+            }
+        }
+    }
+
+    private Circle findDotAt(Point2D pos) {
+        for (Circle dot : connectionMap.values()) {
+            // Prüfen, ob die Maus innerhalb des Radius des Kreises liegt
+            double distance = pos.distance(dot.getCenterX(), dot.getCenterY());
+            if (distance <= ConnectionDot.DOT_RADIUS + 2) { // +2 als kleine Toleranz
+                return dot;
+            }
+        }
+        return null;
+    }
+
+    private boolean isConnectionDot(Object target) {
+        if (target instanceof Circle circle) {
+            return "CONN_POINT".equals(circle.getUserData());
+        }
+        return false;
     }
 
     private void showHandles(Group world) {
@@ -171,6 +267,20 @@ public class SelectionTool implements Tool {
         }
         updateHandlePositions();
         if (!world.getChildren().contains(handleLayer)) world.getChildren().add(handleLayer);
+    }
+
+    private void updateSmartConnections() {
+        for (SmartConnection conn : selectionModel.getAllConnections()) {
+            if (conn.getStartAdapter() == currentAdapter) {
+                Point2D startPos = currentAdapter.getConnectionPointPosition(conn.getStartPointName());
+                Point2D endPos = conn.getEndAdapter().getConnectionPointPosition(conn.getEndPointName());
+                conn.updatePoints(startPos, endPos); //
+            } else if (conn.getEndAdapter() == currentAdapter) {
+                Point2D startPos = conn.getStartAdapter().getConnectionPointPosition(conn.getStartPointName());
+                Point2D endPos = currentAdapter.getConnectionPointPosition(conn.getEndPointName());
+                conn.updatePoints(startPos, endPos); //
+            }
+        }
     }
 
     private void updateHandlePositions() {

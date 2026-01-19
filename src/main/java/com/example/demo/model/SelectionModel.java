@@ -1,6 +1,7 @@
 package com.example.demo.model;
 
 import com.example.demo.ui.ShapeAdapter;
+import com.example.demo.ui.SmartConnection;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -9,6 +10,16 @@ import javafx.beans.property.StringProperty;
 public class SelectionModel {
     private final ObjectProperty<ShapeAdapter> selectedAdapter = new SimpleObjectProperty<>(null);
     private final StringProperty statusMessage = new SimpleStringProperty("Bereit");
+    private final javafx.collections.ObservableList<SmartConnection> allConnections =
+            javafx.collections.FXCollections.observableArrayList();
+
+    public javafx.collections.ObservableList<SmartConnection> getAllConnections() {
+        return allConnections;
+    }
+
+    public void addConnection(SmartConnection connection) {
+        allConnections.add(connection);
+    }
 
     public StringProperty statusMessageProperty() {
         return statusMessage;
