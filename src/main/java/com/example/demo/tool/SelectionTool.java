@@ -6,7 +6,6 @@ import com.example.demo.ui.ResizeHandle;
 import com.example.demo.ui.ShapeAdapter;
 import com.example.demo.ui.SmartConnection;
 import javafx.geometry.Point2D;
-import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
@@ -20,253 +19,50 @@ import java.util.Map;
 
 public class SelectionTool implements Tool {
     private final SelectionModel selectionModel;
-    private Node target = null;
-    private ShapeAdapter currentAdapter = null;
-    private String activeHandleName = null;
+    private SelectionState currentState = new IdleState(); // Startzustand
 
-    private double anchorX;
-    private double anchorY;
-    private final double gridSize = 40.0;
+    // Datenfelder (jetzt mit Gettern/Settern für die States)
+    private ShapeAdapter currentAdapter;
+    private Node target;
+    private double anchorX, anchorY;
+    private SmartConnection activeConnection;
 
-    private final Map<String, Rectangle> handleMap = new HashMap<>();
-    private final Map<String, Circle> connectionMap = new HashMap<>();
+    // UI-Komponenten bleiben im Tool (Zentrale Anzeige)
     private final Group handleLayer = new Group();
     private final Group connectionLayer = new Group();
-
-    private SmartConnection activeConnection = null;
+    private final Map<String, Rectangle> handleMap = new HashMap<>();
+    private final Map<String, Circle> connectionMap = new HashMap<>();
 
     public SelectionTool(SelectionModel selectionModel) {
         this.selectionModel = selectionModel;
+    }
 
-        // Reaktiv: Wenn das Modell geleert wird, verschwinden die Handles
-        this.selectionModel.selectedAdapterProperty().addListener((obs, oldV, newV) -> {
-            if (newV == null) clearHandlesFromUI();
-        });
+    public void setCurrentState(SelectionState state) {
+        System.out.println("Zustandswechsel: " + (currentState != null ? currentState.getClass().getSimpleName() : "null")
+                + " -> " + state.getClass().getSimpleName());
+        this.currentState = state;
     }
 
     @Override
-    public void onActivate(Pane canvas, Group world) {
-        this.currentAdapter = selectionModel.getSelectedAdapter();
-        if (currentAdapter != null) showHandles(world);
+    public void onMousePressed(MouseEvent e, Pane c, Group w) {
+        currentState.onMousePressed(e, this, w);
     }
 
     @Override
-    public void onDeactivate(Pane canvas, Group world) {
-        clearHandlesFromUI();
-        world.getChildren().remove(handleLayer);
-        canvas.setCursor(Cursor.DEFAULT);
-        selectionModel.setSelectedAdapter(null);
+    public void onMouseDragged(MouseEvent e, Pane c, Group w) {
+        currentState.onMouseDragged(e, this, w);
     }
 
     @Override
-    public void onMousePressed(MouseEvent event, Pane canvas, Group world) {
-        Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
-
-        // 1. Check: Klick auf Resize-Handle?
-        if (event.getTarget() instanceof javafx.scene.shape.Rectangle r && r.getUserData() instanceof String handleName) {
-            activeHandleName = handleName;
-            event.consume();
-            return;
-        }
-
-        // 2. Check: Klick auf ein Shape?
-        if (event.getTarget() instanceof Shape s && s.getUserData() instanceof ShapeAdapter adapter) {
-            handleShapeClick(event, s, adapter, mouseInWorld, world);
-            setStatus(1, mouseInWorld);
-            canvas.setCursor(Cursor.CLOSED_HAND);
-            event.consume();
-            return;
-        }
-
-        if (isConnectionDot(event.getTarget())) {
-            Circle dot = (Circle) event.getTarget();
-            Point2D startPos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
-
-            // Neue Verbindung als Gummiband erstellen
-            activeConnection = new SmartConnection(startPos, startPos);
-
-            // Metadaten für die spätere feste Bindung speichern
-            activeConnection.setStartAdapter(currentAdapter);
-            activeConnection.setStartPointName((String) dot.getProperties().get("pointName"));
-
-            world.getChildren().add(activeConnection);
-            event.consume();
-            return;
-        }
-
-        // 3. Fallback: Panning (Klick auf Hintergrund)
-        handlePanningStart(event, canvas, world);
-        event.consume();
+    public void onMouseReleased(MouseEvent e, Pane c, Group w) {
+        currentState.onMouseReleased(e, this, w);
     }
 
-    private void setStatus(Integer number, Point2D mouseInWorld) {
-        selectionModel.setStatusMessage(String.format(
-                "%s. Tool: %s | Welt-Pos: %.0f, %.0f | Target: %s",
-                number, getName(), mouseInWorld.getX(), mouseInWorld.getY(),
-                (target != null ? target.getClass().getSimpleName() : "None")
-        ));
-    }
-
-    private void handleShapeClick(MouseEvent event, Shape shape, ShapeAdapter adapter, Point2D mouseInWorld, Group world) {
-        this.target = shape;
-        this.currentAdapter = adapter;
-        selectionModel.setSelectedAdapter(adapter);
-
-        // IMMER: Anker berechnen, damit onMouseDragged korrekte Werte hat
-        Point2D center = adapter.getCenter();
-        anchorX = center.getX() - mouseInWorld.getX();
-        anchorY = center.getY() - mouseInWorld.getY();
-
-        if (event.isControlDown()) {
-            clearHandlesFromUI();
-            showConnectionPoints(world);
-        } else if (event.isAltDown()) {
-            clearConnectionsFromUI();
-            showHandles(world);
-        } else {
-            clearHandlesFromUI();
-            clearConnectionsFromUI();
-        }
-
-        shape.toFront();
-        handleLayer.toFront();
-        connectionLayer.toFront();
-    }
-
-    private void handlePanningStart(MouseEvent event, Pane canvas, Group world) {
-        this.currentAdapter = null;
-        this.target = world;
-        selectionModel.clear();
-        clearHandlesFromUI();
-        clearConnectionsFromUI();
-
-        anchorX = event.getSceneX() - world.getTranslateX();
-        anchorY = event.getSceneY() - world.getTranslateY();
-        canvas.setCursor(Cursor.CLOSED_HAND);
-    }
-
-    @Override
-    public void onMouseDragged(MouseEvent event, Pane canvas, Group world) {
-        Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
-
-        setStatus(6, mouseInWorld);
-
-        if (activeConnection != null) {
-            Point2D mousePos = world.sceneToLocal(event.getSceneX(), event.getSceneY());
-            Point2D startPos = activeConnection.getStartAdapter().getConnectionPointPosition(activeConnection.getStartPointName());
-
-            activeConnection.updatePoints(startPos, mousePos);
-
-            // OPTIONAL: "Snap" an ein Ziel-Shape unter der Maus
-            checkTargetSnap(event, world);
-
-            event.consume();
-            return;
-        }
-
-        if (activeHandleName != null && currentAdapter != null) {
-            currentAdapter.resize(activeHandleName, mouseInWorld);
-            updateHandlePositions();
-            updateConnectionPointPositions();
-        } else if (target == world) {
-            world.setTranslateX(event.getSceneX() - anchorX);
-            world.setTranslateY(event.getSceneY() - anchorY);
-        } else if (currentAdapter != null) {
-            double rawX = mouseInWorld.getX() + anchorX;
-            double rawY = mouseInWorld.getY() + anchorY;
-            currentAdapter.setCenter(
-                    Math.round(rawX / gridSize) * gridSize,
-                    Math.round(rawY / gridSize) * gridSize
-            );
-            updateHandlePositions();
-            updateConnectionPointPositions();
-            updateSmartConnections();
-        }
-    }
-
-    @Override
-    public void onMouseReleased(MouseEvent event, Pane canvas, Group world) {
-        Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
-        setStatus(7, mouseInWorld);
-
-        if (activeConnection != null) {
-            Circle hitDot = findDotAt(mouseInWorld);
-
-            if (hitDot != null) {
-                // TREFFER!
-                String endPointName = (String) hitDot.getProperties().get("pointName");
-
-                // Wir finden den Adapter des Ziel-Shapes
-                // (In der Regel ist das der aktuell "gepufferte" Adapter vom Hovern)
-                activeConnection.setEndAdapter(currentAdapter);
-                activeConnection.setEndPointName(endPointName);
-
-                // Finales Update der Linien-Endpunkte
-                activeConnection.updatePoints(
-                        activeConnection.getStartAdapter().getConnectionPointPosition(activeConnection.getStartPointName()),
-                        activeConnection.getEndAdapter().getConnectionPointPosition(endPointName)
-                );
-
-                // Hier solltest du die Verbindung in einer Liste im SelectionModel speichern!
-                // selectionModel.addConnection(activeConnection);
-                selectionModel.addConnection(activeConnection);
-
-                selectionModel.setStatusMessage("Verbindung erstellt!");
-            } else {
-                // Daneben gegangen: Linie wieder entfernen
-                world.getChildren().remove(activeConnection);
-                selectionModel.setStatusMessage("Verbindung abgebrochen.");
-            }
-            activeConnection = null;
-        }
-
-        activeHandleName = null;
-        target = null;
-        canvas.setCursor(Cursor.DEFAULT);
-    }
-
-    private void checkTargetSnap(MouseEvent event, Group world) {
-        // Finde heraus, was unter der Maus liegt (außer der Linie selbst)
-        Node hit = event.getPickResult().getIntersectedNode();
-
-        if (hit instanceof Shape s && s.getUserData() instanceof ShapeAdapter targetAdapter) {
-            if (targetAdapter != activeConnection.getStartAdapter()) {
-                // Zeige die Punkte des potenziellen Ziels!
-                // Wir "faken" eine temporäre Selektion nur für die Anzeige der Punkte
-                this.currentAdapter = targetAdapter;
-                showConnectionPoints(world);
-            }
-        }
-    }
-
-    private Circle findDotAt(Point2D pos) {
-        for (Circle dot : connectionMap.values()) {
-            // Prüfen, ob die Maus innerhalb des Radius des Kreises liegt
-            double distance = pos.distance(dot.getCenterX(), dot.getCenterY());
-            if (distance <= ConnectionDot.DOT_RADIUS + 2) { // +2 als kleine Toleranz
-                return dot;
-            }
-        }
-        return null;
-    }
-
-    private boolean isConnectionDot(Object target) {
-        if (target instanceof Circle circle) {
-            return "CONN_POINT".equals(circle.getUserData());
-        }
-        return false;
-    }
-
-    private void showHandles(Group world) {
-        clearHandlesFromUI();
-        if (currentAdapter == null) return;
-
-        for (String name : currentAdapter.getHandleNames()) {
-            ResizeHandle rh = new ResizeHandle(name, currentAdapter.getHandleCursor(name), handleLayer);
-            handleMap.put(name, rh.getNode());
-        }
+    // Hilfsmethoden bleiben als "Service" für die States im Tool
+    public void updateUI() {
         updateHandlePositions();
-        if (!world.getChildren().contains(handleLayer)) world.getChildren().add(handleLayer);
+        updateConnectionPointPositions();
+        updateSmartConnections();
     }
 
     private void updateSmartConnections() {
@@ -297,7 +93,34 @@ public class SelectionTool implements Tool {
         }
     }
 
-    private void showConnectionPoints(Group world) {
+    private void updateConnectionPointPositions() {
+        if (currentAdapter == null || connectionMap.isEmpty()) return;
+
+        for (String name : currentAdapter.getConnectionPointNames()) {
+            Circle dotCircle = connectionMap.get(name);
+            if (dotCircle != null) {
+                Point2D pos = currentAdapter.getConnectionPointPosition(name);
+                dotCircle.setCenterX(pos.getX());
+                dotCircle.setCenterY(pos.getY());
+            }
+        }
+    }
+
+    public void checkTargetHover(MouseEvent event, Group world) {
+        // Wir schauen, was unter der Maus liegt
+        Node hit = event.getPickResult().getIntersectedNode();
+
+        // Wenn es ein Shape mit Adapter ist und NICHT unser Start-Shape...
+        if (hit instanceof Shape s && s.getUserData() instanceof ShapeAdapter targetAdapter) {
+            if (targetAdapter != currentAdapter) {
+                // Wir "fokussieren" dieses Shape temporär, um seine Dots zu zeigen
+                this.currentAdapter = targetAdapter;
+                showConnectionPoints(world);
+            }
+        }
+    }
+
+    public void showConnectionPoints(Group world) {
         clearConnectionsFromUI();
         if (currentAdapter == null) return;
 
@@ -314,27 +137,137 @@ public class SelectionTool implements Tool {
         }
     }
 
-    private void updateConnectionPointPositions() {
-        if (currentAdapter == null || connectionMap.isEmpty()) return;
+    public void showHandles(Group world) {
+        clearHandlesFromUI();
+        if (currentAdapter == null) return;
 
-        for (String name : currentAdapter.getConnectionPointNames()) {
-            Circle dotCircle = connectionMap.get(name);
-            if (dotCircle != null) {
-                Point2D pos = currentAdapter.getConnectionPointPosition(name);
-                dotCircle.setCenterX(pos.getX());
-                dotCircle.setCenterY(pos.getY());
-            }
+        for (String name : currentAdapter.getHandleNames()) {
+            ResizeHandle rh = new ResizeHandle(name, currentAdapter.getHandleCursor(name), handleLayer);
+            handleMap.put(name, rh.getNode());
         }
+        updateHandlePositions();
+        if (!world.getChildren().contains(handleLayer)) world.getChildren().add(handleLayer);
     }
 
-    private void clearConnectionsFromUI() {
-        connectionLayer.getChildren().clear();
-    }
-
-    private void clearHandlesFromUI() {
+    public void clearHandlesFromUI() {
         handleLayer.getChildren().clear();
     }
 
+    public void clearConnectionsFromUI() {
+        connectionLayer.getChildren().clear();
+    }
+
+    public Circle findDotAt(Point2D pos) {
+        // Wir durchsuchen alle aktuell sichtbaren Connection-Dots
+        for (Circle dot : connectionMap.values()) {
+            // Wir messen die Distanz zwischen Maus und Kreismittelpunkt
+            double distance = pos.distance(dot.getCenterX(), dot.getCenterY());
+
+            // Toleranzbereich: Radius + 2 Pixel Puffer für leichteres Treffen
+            if (distance <= ConnectionDot.DOT_RADIUS + 2.0) {
+                return dot;
+            }
+        }
+        return null;
+    }
+
+    public void clearSelection() {
+        // 1. Logische Auswahl im SelectionModel auf null setzen
+        if (selectionModel != null) {
+            selectionModel.setSelectedAdapter(null);
+        }
+
+        // 2. Den internen Zeiger auf den aktuellen Adapter löschen
+        this.currentAdapter = null;
+        this.target = null;
+
+        // 3. Die UI-Layer für Handles und ConnectionDots leeren
+        clearHandlesFromUI();
+        clearConnectionsFromUI();
+
+        // 4. Statusnachricht aktualisieren (optional)
+        if (selectionModel != null) {
+            selectionModel.setStatusMessage("Auswahl aufgehoben.");
+        }
+    }
+
+    public boolean isConnectionDot(Object target) {
+        if (target instanceof Circle circle) {
+            return "CONN_POINT".equals(circle.getUserData());
+        }
+        return false;
+    }
+
+    public boolean isHandle(Node node) {
+        // Ein Handle ist ein Rectangle, das wir mit einem String-Namen markiert haben
+        return node instanceof javafx.scene.shape.Rectangle &&
+                node.getUserData() instanceof String;
+    }
+
+    public boolean isShape(Node node) {
+        // Ein Shape ist daran erkennbar, dass es einen Adapter besitzt
+        return node instanceof javafx.scene.shape.Shape &&
+                node.getUserData() instanceof ShapeAdapter;
+    }
+
     @Override
-    public String getName() { return "Selection Tool"; }
+    public String getName() {
+        return "";
+    }
+
+    public SelectionModel getSelectionModel() {
+        return selectionModel;
+    }
+
+    public SelectionState getCurrentState() {
+        return currentState;
+    }
+
+    public ShapeAdapter getCurrentAdapter() {
+        return currentAdapter;
+    }
+
+    public void setCurrentAdapter(ShapeAdapter currentAdapter) {
+        this.currentAdapter = currentAdapter;
+    }
+
+    public Node getTarget() {
+        return target;
+    }
+
+    public void setTarget(Node target) {
+        this.target = target;
+    }
+
+    public double getAnchorX() {
+        return anchorX;
+    }
+
+    public void setAnchorX(double anchorX) {
+        this.anchorX = anchorX;
+    }
+
+    public double getAnchorY() {
+        return anchorY;
+    }
+
+    public void setAnchorY(double anchorY) {
+        this.anchorY = anchorY;
+    }
+
+    public SmartConnection getActiveConnection() {
+        return activeConnection;
+    }
+
+    public void setActiveConnection(SmartConnection activeConnection) {
+        this.activeConnection = activeConnection;
+    }
+
+    public Group getHandleLayer() {
+        return handleLayer;
+    }
+
+    public Group getConnectionLayer() {
+        return connectionLayer;
+    }
 }
