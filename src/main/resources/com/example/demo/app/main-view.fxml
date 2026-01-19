@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
 
 <BorderPane prefHeight="600.0" prefWidth="800.0" xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.demo.controller.MainController">
@@ -9,4 +11,9 @@
     <center>
         <fx:include fx:id="canvas" source="canvas-view.fxml" />
     </center>
+    <bottom>
+        <HBox spacing="10" style="-fx-background-color: #f0f0f0; -fx-padding: 5;">
+            <Label fx:id="statusLabel" text="Bereit" />
+        </HBox>
+    </bottom>
 </BorderPane>

@@ -52,7 +52,7 @@ public class DrawTool implements Tool {
                 return;
             }
 
-            selectionModel.setSelectedAdapter(adapter);
+            // selectionModel.setSelectedAdapter(adapter);
             shape.setUserData(adapter); // Adapter für spätere Selektion/Resize speichern
             shape.setStroke(Color.BLACK);
             shape.setStrokeWidth(3);
