@@ -21,7 +21,6 @@ public class MainController {
         );
 
         toolbarController.selectedToolProperty().addListener((obs, oldTool, newTool) -> {
-            selectionModel.clear();
             if (newTool == ToolbarController.ToolType.CIRCLE || newTool == ToolbarController.ToolType.RECTANGLE) {
                 // Setze das aktuelle Tool auf eine neue Instanz von DrawTool
                 canvasController.setCurrentTool(new DrawTool(newTool, selectionModel));

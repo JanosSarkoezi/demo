@@ -6,14 +6,16 @@ import com.example.demo.ui.ShapeAdapter;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SelectionTool implements Tool {
-    private javafx.scene.Node target = null;
+    private Node target = null;
     private ShapeAdapter currentAdapter = null;
     private String activeHandleName = null;
 
@@ -28,24 +30,41 @@ public class SelectionTool implements Tool {
     public SelectionTool(SelectionModel selectionModel) {
         this.selectionModel = selectionModel;
 
-        // WICHTIG: Beobachte das Modell. Wenn die Auswahl null wird, lösche Handles.
+        // Reagiert auf externe Änderungen am Modell
         this.selectionModel.selectedAdapterProperty().addListener((obs, oldV, newV) -> {
             if (newV == null) {
                 handleLayer.getChildren().clear();
+                currentAdapter = null;
             } else {
-                // optional: Handles sofort für neues Objekt zeichnen
+                currentAdapter = newV;
             }
         });
     }
 
     @Override
-    public String getName() { return "SELECTION (Move & Resize)"; }
+    public String getName() { return "SELECTION (Move, Resize & Pan)"; }
+
+    @Override
+    public void onActivate(Pane canvas, Group world) {
+        // Falls beim Tool-Wechsel schon was selektiert ist, Handles zeigen
+        this.currentAdapter = selectionModel.getSelectedAdapter();
+        if (currentAdapter != null) {
+            showHandles(world);
+        }
+    }
+
+    @Override
+    public void onDeactivate(Pane canvas, Group world) {
+        clearHandles(world);
+        canvas.setCursor(Cursor.DEFAULT);
+    }
 
     @Override
     public void onMousePressed(MouseEvent event, Pane canvas, Group world) {
         Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
+
         // 1. Klick auf ein Handle?
-        if (event.getTarget() instanceof javafx.scene.shape.Rectangle r && r.getUserData() instanceof String handlePos) {
+        if (event.getTarget() instanceof Rectangle r && r.getUserData() instanceof String handlePos) {
             activeHandleName = handlePos;
             event.consume();
             return;
@@ -67,16 +86,16 @@ public class SelectionTool implements Tool {
             handleLayer.toFront();
         } else {
             // 3. Klick auf Hintergrund (Panning)
-            target = world;
             currentAdapter = null;
             clearHandles(world);
-            target = world;
+            target = world; // Wir setzen das Ziel auf die Welt für Panning
 
             // Für das Panning speichern wir den Klick-Punkt in Scene-Koordinaten
             anchorX = event.getSceneX() - world.getTranslateX();
             anchorY = event.getSceneY() - world.getTranslateY();
             canvas.setCursor(Cursor.CLOSED_HAND);
         }
+
         selectionModel.setSelectedAdapter(currentAdapter);
         event.consume();
     }
@@ -86,15 +105,15 @@ public class SelectionTool implements Tool {
         Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
 
         if (activeHandleName != null && currentAdapter != null) {
-            // RESIZING
+            // CASE: RESIZING
             currentAdapter.resize(activeHandleName, mouseInWorld);
             updateHandlePositions();
         } else if (target == world) {
-            // PANNING: Absolute Positionierung der Welt relativ zur Scene
-            target.setTranslateX(event.getSceneX() - anchorX);
-            target.setTranslateY(event.getSceneY() - anchorY);
+            // CASE: PANNING (Welt verschieben)
+            world.setTranslateX(event.getSceneX() - anchorX);
+            world.setTranslateY(event.getSceneY() - anchorY);
         } else if (currentAdapter != null) {
-            // MOVING mit Snapping
+            // CASE: MOVING (Shape verschieben mit Snapping)
             double rawX = mouseInWorld.getX() + anchorX;
             double rawY = mouseInWorld.getY() + anchorY;
 
@@ -109,8 +128,11 @@ public class SelectionTool implements Tool {
     @Override
     public void onMouseReleased(MouseEvent event, Pane canvas, Group world) {
         activeHandleName = null;
+        target = null;
         canvas.setCursor(Cursor.DEFAULT);
     }
+
+    // --- Hilfsmethoden für Handles ---
 
     private void showHandles(Group world) {
         clearHandles(world);
@@ -121,7 +143,9 @@ public class SelectionTool implements Tool {
             handles.add(h);
         }
         updateHandlePositions();
-        if (!world.getChildren().contains(handleLayer)) world.getChildren().add(handleLayer);
+        if (!world.getChildren().contains(handleLayer)) {
+            world.getChildren().add(handleLayer);
+        }
     }
 
     private void updateHandlePositions() {

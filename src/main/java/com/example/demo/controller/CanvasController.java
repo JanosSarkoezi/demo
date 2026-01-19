@@ -50,7 +50,17 @@ public class CanvasController {
         this.currentTool = new SelectionTool(selectionModel);
     }
 
-    public void setCurrentTool(Tool currentTool) {
-        this.currentTool = currentTool;
+    public void setCurrentTool(Tool newTool) {
+        // 1. Altes Tool verabschieden
+        if (this.currentTool != null) {
+            this.currentTool.onDeactivate(drawingCanvas, world);
+        }
+
+        this.currentTool = newTool;
+
+        // 2. Neues Tool begrüßen
+        if (this.currentTool != null) {
+            this.currentTool.onActivate(drawingCanvas, world);
+        }
     }
 }
