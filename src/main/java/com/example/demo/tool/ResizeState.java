@@ -17,6 +17,7 @@ public class ResizeState implements SelectionState {
     @Override
     public void onMousePressed(MouseEvent event, SelectionTool tool, Group world) {
         // Initialisierung bereits durch Konstruktor erfolgt
+        event.consume();
     }
 
     @Override
@@ -30,6 +31,8 @@ public class ResizeState implements SelectionState {
             // Aktualisiert Handles und Linien, da sich die Grenzen verschoben haben
             tool.updateUI();
         }
+
+        event.consume();
     }
 
     @Override

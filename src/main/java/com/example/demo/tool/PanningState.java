@@ -19,6 +19,7 @@ public class PanningState implements SelectionState {
 
         tool.setTarget(world);
         tool.clearSelection(); // Deselektiert aktuelle Shapes beim Panning
+        event.consume();
     }
 
     @Override
@@ -30,6 +31,7 @@ public class PanningState implements SelectionState {
         // Welt verschieben
         world.setTranslateX(startTranslateX + deltaX);
         world.setTranslateY(startTranslateY + deltaY);
+        event.consume();
     }
 
     @Override

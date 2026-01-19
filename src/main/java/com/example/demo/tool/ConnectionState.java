@@ -27,6 +27,7 @@ public class ConnectionState implements SelectionState {
         activeConnection.setMouseTransparent(true);
 
         world.getChildren().add(activeConnection);
+        event.consume();
     }
 
     @Override
@@ -39,6 +40,7 @@ public class ConnectionState implements SelectionState {
 
         // Prüfen, ob wir über einem Ziel schweben (für visuelles Feedback)
         tool.checkTargetHover(event, world);
+        event.consume();
     }
 
     @Override

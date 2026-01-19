@@ -21,6 +21,8 @@ public class MoveState implements SelectionState {
         // Wir speichern die Ankerwerte direkt im Tool, damit sie konsistent bleiben
         tool.setAnchorX(center.getX() - mouseInWorld.getX());
         tool.setAnchorY(center.getY() - mouseInWorld.getY());
+
+        event.consume();
     }
 
     @Override
@@ -38,6 +40,8 @@ public class MoveState implements SelectionState {
         );
 
         tool.updateUI(); // Handles und Linien mitziehen
+
+        event.consume();
     }
 
     @Override
