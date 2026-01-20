@@ -66,11 +66,6 @@ public class SelectionTool implements Tool {
         updateHandlePositions();
         updateConnectionPointPositions();
         updateSmartConnections();
-
-        // NEU: Textposition mit dem Shape synchronisieren
-        if (currentAdapter instanceof RectangleAdapter ra) {
-            ra.updateLabelPosition();
-        }
     }
 
     private void updateSmartConnections() {
@@ -140,15 +135,13 @@ public class SelectionTool implements Tool {
 
     private void commitText(ShapeAdapter adapter, TextField textField, Group world) {
         if (world.getChildren().contains(textField)) {
-            String input = textField.getText();
-            adapter.setText(input); // Hier wird intern das Label aktualisiert
+            // 1. Text im Adapter speichern (das Label aktualisiert sich durch Bindings selbst)
+            adapter.setText(textField.getText());
 
+            // 2. Das Eingabefeld entfernen
             world.getChildren().remove(textField);
 
-            // Wichtig: Falls du ein RectangleAdapter hast, Position auffrischen
-            if (adapter instanceof RectangleAdapter ra) {
-                ra.updateLabelPosition();
-            }
+            // Der manuelle Aufruf von ra.updateLabelPosition() kann hier entfallen!
         }
     }
 

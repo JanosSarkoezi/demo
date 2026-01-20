@@ -2,6 +2,7 @@ package com.example.demo.ui;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
+import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
@@ -10,13 +11,28 @@ import java.util.List;
 
 public class RectangleAdapter implements ShapeAdapter {
     private final Rectangle rect;
-    private final Text label;
+    private final Label label;
 
     public RectangleAdapter(Rectangle rect) {
         this.rect = rect;
-        this.label = new Text();
-        this.label.setFill(Color.BLACK);
-        // this.label.setMouseTransparent(true); // Klicks gehen durch den Text ans Shape
+        this.label = new Label();
+
+        // Konfiguration aus deinem bewährten Code
+        label.setMouseTransparent(true);
+        label.setWrapText(true);
+        label.setAlignment(javafx.geometry.Pos.CENTER);
+        label.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        label.setStyle("-fx-background-color: transparent;");
+        label.setPadding(new javafx.geometry.Insets(5));
+
+        // Die "Magie": Bindungen statt manueller Updates
+        // Position binden
+        label.layoutXProperty().bind(rect.xProperty());
+        label.layoutYProperty().bind(rect.yProperty());
+
+        // Größe binden (mit 10px Puffer)
+        label.prefWidthProperty().bind(rect.widthProperty());
+        label.prefHeightProperty().bind(rect.heightProperty());
     }
 
     @Override public Rectangle getShape() { return rect; }
@@ -115,24 +131,17 @@ public class RectangleAdapter implements ShapeAdapter {
         };
     }
 
-    public Text getLabel() {
+    public Label getLabel() {
         return label;
     }
 
     @Override
     public void setText(String value) {
         label.setText(value);
-        updateLabelPosition();
     }
 
     @Override
     public String getText() {
         return label.getText();
-    }
-
-    public void updateLabelPosition() {
-        // Zentriert den Text im Rechteck
-        label.setX(rect.getX() + (rect.getWidth() - label.getLayoutBounds().getWidth()) / 2);
-        label.setY(rect.getY() + (rect.getHeight() / 2) + 5);
     }
 }
