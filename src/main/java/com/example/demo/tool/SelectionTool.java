@@ -111,28 +111,11 @@ public class SelectionTool implements Tool {
         }
     }
 
+    // In SelectionTool.java
     public void editText(ShapeAdapter adapter, Group world) {
-        if (adapter == null) return;
-
-        // 1. TextField erstellen und initialisieren
-        TextField textField = new TextField(adapter.getText()); // Adapter braucht getText()
-        Point2D pos = adapter.getCenter();
-
-        // 2. Positionierung (zentriert über dem Shape)
-        textField.setLayoutX(pos.getX() - 50); // Einfache Zentrierung
-        textField.setLayoutY(pos.getY() - 15);
-        textField.setPrefWidth(100);
-
-        // 3. Fokus und Styling
-        textField.requestFocus();
-
-        // 4. Abschluss der Eingabe (Enter oder Fokusverlust)
-        textField.setOnAction(e -> commitText(adapter, textField, world));
-        textField.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal) commitText(adapter, textField, world);
-        });
-
-        world.getChildren().add(textField);
+        if (adapter instanceof RectangleAdapter ra) {
+            ra.applyEditMode(); // Aktiviert die TextArea, die schon da ist
+        }
     }
 
     private void commitText(ShapeAdapter adapter, TextField textField, Group world) {

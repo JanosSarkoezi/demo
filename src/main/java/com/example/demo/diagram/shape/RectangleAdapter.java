@@ -3,6 +3,7 @@ package com.example.demo.diagram.shape;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
@@ -11,28 +12,28 @@ import java.util.List;
 
 public class RectangleAdapter implements ShapeAdapter {
     private final Rectangle rect;
-    private final Label label;
+    private final TextArea textArea;
 
     public RectangleAdapter(Rectangle rect) {
         this.rect = rect;
-        this.label = new Label();
+        this.textArea = new TextArea("");
 
-        // Konfiguration aus deinem bewährten Code
-        label.setMouseTransparent(true);
-        label.setWrapText(true);
-        label.setAlignment(javafx.geometry.Pos.CENTER);
-        label.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        label.setStyle("-fx-background-color: transparent;");
-        label.setPadding(new javafx.geometry.Insets(5));
+        // Dein Design: Standard schwarz auf weiß
+        textArea.setWrapText(true);
+        applyDisplayMode(); // Startet im Anzeige-Modus
 
-        // Die "Magie": Bindungen statt manueller Updates
-        // Position binden
-        label.layoutXProperty().bind(rect.xProperty());
-        label.layoutYProperty().bind(rect.yProperty());
+        // Bindings für Position und Größe
+        textArea.layoutXProperty().bind(rect.xProperty());
+        textArea.layoutYProperty().bind(rect.yProperty());
+        textArea.prefWidthProperty().bind(rect.widthProperty());
+        textArea.prefHeightProperty().bind(rect.heightProperty());
 
-        // Größe binden (mit 10px Puffer)
-        label.prefWidthProperty().bind(rect.widthProperty());
-        label.prefHeightProperty().bind(rect.heightProperty());
+        // Fokus-Verlust beendet Edit-Modus
+        textArea.focusedProperty().addListener((obs, oldVal, isFocused) -> {
+            if (!isFocused) {
+                applyDisplayMode();
+            }
+        });
     }
 
     @Override public Rectangle getShape() { return rect; }
@@ -130,18 +131,26 @@ public class RectangleAdapter implements ShapeAdapter {
             default -> throw new IllegalArgumentException("Unbekannter Punkt: " + name);
         };
     }
-
-    public Label getLabel() {
-        return label;
+    public void applyDisplayMode() {
+        textArea.setEditable(false);
+        textArea.setMouseTransparent(true); // Wichtig für unser SelectionTool!
+        textArea.setStyle("-fx-background-color: transparent; " +
+                "-fx-control-inner-background: transparent; " +
+                "-fx-background-insets: 0;");
     }
+
+    public void applyEditMode() {
+        textArea.setEditable(true);
+        textArea.setMouseTransparent(false);
+        textArea.setStyle(""); // Standard-Look für Eingabe
+        textArea.requestFocus();
+    }
+
+    public TextArea getTextArea() { return textArea; }
 
     @Override
-    public void setText(String value) {
-        label.setText(value);
-    }
+    public void setText(String value) { textArea.setText(value); }
 
     @Override
-    public String getText() {
-        return label.getText();
-    }
+    public String getText() { return textArea.getText(); }
 }

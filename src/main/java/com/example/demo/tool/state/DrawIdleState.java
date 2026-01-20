@@ -39,7 +39,7 @@ public class DrawIdleState implements DrawState {
             adapter = ra;
             shape = r;
 
-            world.getChildren().add(ra.getLabel());
+            world.getChildren().add(ra.getTextArea());
         } else if (tool.getToolType() == ToolbarController.ToolType.CIRCLE) {
             Circle c = new Circle(pos.getX(), pos.getY(), 20);
             adapter = new CircleAdapter(c);
