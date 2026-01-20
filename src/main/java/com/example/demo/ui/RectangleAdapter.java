@@ -2,14 +2,22 @@ package com.example.demo.ui;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 
 import java.util.List;
 
 public class RectangleAdapter implements ShapeAdapter {
     private final Rectangle rect;
+    private final Text label;
 
-    public RectangleAdapter(Rectangle rect) { this.rect = rect; }
+    public RectangleAdapter(Rectangle rect) {
+        this.rect = rect;
+        this.label = new Text();
+        this.label.setFill(Color.BLACK);
+        // this.label.setMouseTransparent(true); // Klicks gehen durch den Text ans Shape
+    }
 
     @Override public Rectangle getShape() { return rect; }
     @Override public Point2D getPosition() { return new Point2D(rect.getX(), rect.getY()); }
@@ -105,5 +113,26 @@ public class RectangleAdapter implements ShapeAdapter {
             case "W" -> new Point2D(x, y + h / 2);
             default -> throw new IllegalArgumentException("Unbekannter Punkt: " + name);
         };
+    }
+
+    public Text getLabel() {
+        return label;
+    }
+
+    @Override
+    public void setText(String value) {
+        label.setText(value);
+        updateLabelPosition();
+    }
+
+    @Override
+    public String getText() {
+        return label.getText();
+    }
+
+    public void updateLabelPosition() {
+        // Zentriert den Text im Rechteck
+        label.setX(rect.getX() + (rect.getWidth() - label.getLayoutBounds().getWidth()) / 2);
+        label.setY(rect.getY() + (rect.getHeight() / 2) + 5);
     }
 }

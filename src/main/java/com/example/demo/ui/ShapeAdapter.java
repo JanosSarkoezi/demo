@@ -37,4 +37,7 @@ public interface ShapeAdapter {
     void setCenter(double centerX, double centerY);
 
     void resize(String handleName, Point2D mousePos);
+
+    default String getText() {return "";}
+    default void setText(String text) {}
 }

@@ -2,6 +2,7 @@ package com.example.demo.tool;
 
 import com.example.demo.model.SelectionModel;
 import com.example.demo.ui.ConnectionDot;
+import com.example.demo.ui.RectangleAdapter;
 import com.example.demo.ui.ResizeHandle;
 import com.example.demo.ui.ShapeAdapter;
 import com.example.demo.ui.SmartConnection;
@@ -13,6 +14,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.scene.control.TextField;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +30,7 @@ public class SelectionTool implements Tool {
     private SmartConnection activeConnection;
 
     // UI-Komponenten bleiben im Tool (Zentrale Anzeige)
+
     private final Group handleLayer = new Group();
     private final Group connectionLayer = new Group();
     private final Map<String, Rectangle> handleMap = new HashMap<>();
@@ -63,6 +66,11 @@ public class SelectionTool implements Tool {
         updateHandlePositions();
         updateConnectionPointPositions();
         updateSmartConnections();
+
+        // NEU: Textposition mit dem Shape synchronisieren
+        if (currentAdapter instanceof RectangleAdapter ra) {
+            ra.updateLabelPosition();
+        }
     }
 
     private void updateSmartConnections() {
@@ -102,6 +110,44 @@ public class SelectionTool implements Tool {
                 Point2D pos = currentAdapter.getConnectionPointPosition(name);
                 dotCircle.setCenterX(pos.getX());
                 dotCircle.setCenterY(pos.getY());
+            }
+        }
+    }
+
+    public void editText(ShapeAdapter adapter, Group world) {
+        if (adapter == null) return;
+
+        // 1. TextField erstellen und initialisieren
+        TextField textField = new TextField(adapter.getText()); // Adapter braucht getText()
+        Point2D pos = adapter.getCenter();
+
+        // 2. Positionierung (zentriert über dem Shape)
+        textField.setLayoutX(pos.getX() - 50); // Einfache Zentrierung
+        textField.setLayoutY(pos.getY() - 15);
+        textField.setPrefWidth(100);
+
+        // 3. Fokus und Styling
+        textField.requestFocus();
+
+        // 4. Abschluss der Eingabe (Enter oder Fokusverlust)
+        textField.setOnAction(e -> commitText(adapter, textField, world));
+        textField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) commitText(adapter, textField, world);
+        });
+
+        world.getChildren().add(textField);
+    }
+
+    private void commitText(ShapeAdapter adapter, TextField textField, Group world) {
+        if (world.getChildren().contains(textField)) {
+            String input = textField.getText();
+            adapter.setText(input); // Hier wird intern das Label aktualisiert
+
+            world.getChildren().remove(textField);
+
+            // Wichtig: Falls du ein RectangleAdapter hast, Position auffrischen
+            if (adapter instanceof RectangleAdapter ra) {
+                ra.updateLabelPosition();
             }
         }
     }

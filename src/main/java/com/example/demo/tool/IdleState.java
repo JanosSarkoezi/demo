@@ -13,6 +13,13 @@ public class IdleState implements SelectionState {
         Node hit = event.getPickResult().getIntersectedNode();
         SelectionState nextState = null;
 
+        if (event.getClickCount() == 2 && tool.isShape(hit)) {
+            ShapeAdapter sa = (ShapeAdapter) hit.getUserData();
+            tool.editText(sa, world);
+            event.consume();
+            return;
+        }
+
         // Wenn wir ein Handle treffen, wollen wir IMMER resizen, egal ob Alt gedrückt ist oder nicht.
         if (tool.isHandle(hit)) {
             nextState = new ResizeState((Rectangle) hit);
