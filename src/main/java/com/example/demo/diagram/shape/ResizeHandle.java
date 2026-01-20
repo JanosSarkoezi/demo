@@ -1,4 +1,4 @@
-package com.example.demo.ui;
+package com.example.demo.diagram.shape;
 
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;

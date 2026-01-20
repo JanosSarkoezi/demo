@@ -2,6 +2,8 @@ package com.example.demo.tool;
 
 import com.example.demo.controller.ToolbarController.ToolType; // Enum importieren
 import com.example.demo.model.SelectionModel;
+import com.example.demo.tool.state.DrawIdleState;
+import com.example.demo.tool.state.DrawState;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;

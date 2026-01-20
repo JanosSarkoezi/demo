@@ -1,7 +1,7 @@
 package com.example.demo.model;
 
-import com.example.demo.ui.ShapeAdapter;
-import com.example.demo.ui.SmartConnection;
+import com.example.demo.diagram.shape.ShapeAdapter;
+import com.example.demo.diagram.connection.SmartConnection;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;

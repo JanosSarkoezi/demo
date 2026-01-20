@@ -1,4 +1,4 @@
-package com.example.demo.ui;
+package com.example.demo.diagram.shape;
 
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Shape;

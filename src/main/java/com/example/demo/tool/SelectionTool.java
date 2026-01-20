@@ -1,11 +1,13 @@
 package com.example.demo.tool;
 
+import com.example.demo.diagram.connection.ConnectionDot;
+import com.example.demo.diagram.connection.SmartConnection;
+import com.example.demo.diagram.shape.RectangleAdapter;
+import com.example.demo.diagram.shape.ResizeHandle;
+import com.example.demo.diagram.shape.ShapeAdapter;
 import com.example.demo.model.SelectionModel;
-import com.example.demo.ui.ConnectionDot;
-import com.example.demo.ui.RectangleAdapter;
-import com.example.demo.ui.ResizeHandle;
-import com.example.demo.ui.ShapeAdapter;
-import com.example.demo.ui.SmartConnection;
+import com.example.demo.tool.state.IdleState;
+import com.example.demo.tool.state.SelectionState;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;

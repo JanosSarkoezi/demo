@@ -1,4 +1,4 @@
-package com.example.demo.ui;
+package com.example.demo.diagram.connection;
 
 import javafx.scene.Group;
 import javafx.scene.paint.Color;

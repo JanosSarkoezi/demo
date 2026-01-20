@@ -1,5 +1,6 @@
-package com.example.demo.ui;
+package com.example.demo.diagram.connection;
 
+import com.example.demo.diagram.shape.ShapeAdapter;
 import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;

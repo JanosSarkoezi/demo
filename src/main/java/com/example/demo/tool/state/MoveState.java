@@ -1,6 +1,7 @@
-package com.example.demo.tool;
+package com.example.demo.tool.state;
 
-import com.example.demo.ui.ShapeAdapter;
+import com.example.demo.diagram.shape.ShapeAdapter;
+import com.example.demo.tool.SelectionTool;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;

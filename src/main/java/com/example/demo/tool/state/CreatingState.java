@@ -1,8 +1,9 @@
-package com.example.demo.tool;
+package com.example.demo.tool.state;
 
-import com.example.demo.ui.CircleAdapter;
-import com.example.demo.ui.RectangleAdapter;
-import com.example.demo.ui.ShapeAdapter;
+import com.example.demo.diagram.shape.CircleAdapter;
+import com.example.demo.diagram.shape.RectangleAdapter;
+import com.example.demo.diagram.shape.ShapeAdapter;
+import com.example.demo.tool.DrawTool;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
