@@ -1,5 +1,6 @@
 package com.example.demo.tool.state;
 
+import com.example.demo.diagram.shape.RectangleAdapter;
 import com.example.demo.diagram.shape.ShapeAdapter;
 import com.example.demo.tool.SelectionTool;
 import javafx.scene.Group;
@@ -16,9 +17,11 @@ public class IdleState implements SelectionState {
 
         if (event.getClickCount() == 2 && tool.isShape(hit)) {
             ShapeAdapter sa = (ShapeAdapter) hit.getUserData();
-            tool.editText(sa, world);
-            event.consume();
-            return;
+            if (sa instanceof RectangleAdapter ra) {
+                tool.setCurrentState(new TextInputState(ra));
+                event.consume();
+                return;
+            }
         }
 
         // Wenn wir ein Handle treffen, wollen wir IMMER resizen, egal ob Alt gedrückt ist oder nicht.

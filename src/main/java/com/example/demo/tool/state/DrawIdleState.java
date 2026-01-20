@@ -34,7 +34,8 @@ public class DrawIdleState implements DrawState {
         ShapeAdapter adapter;
 
         if (tool.getToolType() == ToolbarController.ToolType.RECTANGLE) {
-            Rectangle r = new Rectangle(pos.getX() - 20, pos.getY() - 20, 40, 40);
+            // Rectangle r = new Rectangle(pos.getX() - 20, pos.getY() - 20, 40, 40);
+            Rectangle r = new Rectangle(pos.getX(), pos.getY(), 40, 40);
             RectangleAdapter ra = new RectangleAdapter(r);
             adapter = ra;
             shape = r;

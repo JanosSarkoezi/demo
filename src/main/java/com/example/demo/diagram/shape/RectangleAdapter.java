@@ -18,22 +18,15 @@ public class RectangleAdapter implements ShapeAdapter {
         this.rect = rect;
         this.textArea = new TextArea("");
 
-        // Dein Design: Standard schwarz auf weiß
-        textArea.setWrapText(true);
-        applyDisplayMode(); // Startet im Anzeige-Modus
-
         // Bindings für Position und Größe
         textArea.layoutXProperty().bind(rect.xProperty());
         textArea.layoutYProperty().bind(rect.yProperty());
         textArea.prefWidthProperty().bind(rect.widthProperty());
         textArea.prefHeightProperty().bind(rect.heightProperty());
 
-        // Fokus-Verlust beendet Edit-Modus
-        textArea.focusedProperty().addListener((obs, oldVal, isFocused) -> {
-            if (!isFocused) {
-                applyDisplayMode();
-            }
-        });
+        // Dein Design: Standard schwarz auf weiß
+        textArea.setWrapText(true);
+        applyDisplayMode(); // Startet im Anzeige-Modus
     }
 
     @Override public Rectangle getShape() { return rect; }
@@ -131,18 +124,30 @@ public class RectangleAdapter implements ShapeAdapter {
             default -> throw new IllegalArgumentException("Unbekannter Punkt: " + name);
         };
     }
+
     public void applyDisplayMode() {
         textArea.setEditable(false);
-        textArea.setMouseTransparent(true); // Wichtig für unser SelectionTool!
-        textArea.setStyle("-fx-background-color: transparent; " +
-                "-fx-control-inner-background: transparent; " +
-                "-fx-background-insets: 0;");
+        textArea.setMouseTransparent(true);
+        // Transparenter Hintergrund, schwarzer Text
+        textArea.setStyle(
+                "-fx-background-color: transparent; " +
+                        "-fx-control-inner-background: transparent; " +
+                        "-fx-text-fill: black; " +
+                        "-fx-background-insets: 0; " +
+                        "-fx-padding: 5;"
+        );
     }
 
     public void applyEditMode() {
         textArea.setEditable(true);
         textArea.setMouseTransparent(false);
-        textArea.setStyle(""); // Standard-Look für Eingabe
+        // Weißer Hintergrund beim Tippen, schwarzer Text, kein blauer Rahmen
+        textArea.setStyle(
+                "-fx-control-inner-background: white; " +
+                        "-fx-text-fill: black; " +
+                        "-fx-faint-focus-color: transparent; " +
+                        "-fx-focus-color: gray;" // Optional: ein dezentes Grau statt Blau
+        );
         textArea.requestFocus();
     }
 

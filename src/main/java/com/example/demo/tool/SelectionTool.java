@@ -111,25 +111,6 @@ public class SelectionTool implements Tool {
         }
     }
 
-    // In SelectionTool.java
-    public void editText(ShapeAdapter adapter, Group world) {
-        if (adapter instanceof RectangleAdapter ra) {
-            ra.applyEditMode(); // Aktiviert die TextArea, die schon da ist
-        }
-    }
-
-    private void commitText(ShapeAdapter adapter, TextField textField, Group world) {
-        if (world.getChildren().contains(textField)) {
-            // 1. Text im Adapter speichern (das Label aktualisiert sich durch Bindings selbst)
-            adapter.setText(textField.getText());
-
-            // 2. Das Eingabefeld entfernen
-            world.getChildren().remove(textField);
-
-            // Der manuelle Aufruf von ra.updateLabelPosition() kann hier entfallen!
-        }
-    }
-
     public void checkTargetHover(MouseEvent event, Group world) {
         // Wir schauen, was unter der Maus liegt
         Node hit = event.getPickResult().getIntersectedNode();
