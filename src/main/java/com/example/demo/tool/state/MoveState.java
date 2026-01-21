@@ -1,6 +1,7 @@
 package com.example.demo.tool.state;
 
 import com.example.demo.diagram.shape.ShapeAdapter;
+import com.example.demo.model.MoveCommand;
 import com.example.demo.tool.SelectionTool;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
@@ -8,6 +9,7 @@ import javafx.scene.input.MouseEvent;
 
 public class MoveState implements SelectionState {
     private final ShapeAdapter adapter;
+    private Point2D startCenter;
 
     public MoveState(ShapeAdapter adapter) {
         this.adapter = adapter; // Jetzt ist der Adapter sicher vorhanden!
@@ -17,11 +19,11 @@ public class MoveState implements SelectionState {
     public void onMousePressed(MouseEvent event, SelectionTool tool, Group world) {
         // Initialisierung (Anker berechnen)
         Point2D mouseInWorld = world.sceneToLocal(event.getSceneX(), event.getSceneY());
-        Point2D center = adapter.getCenter();
+        startCenter = adapter.getCenter();
 
         // Wir speichern die Ankerwerte direkt im Tool, damit sie konsistent bleiben
-        tool.setAnchorX(center.getX() - mouseInWorld.getX());
-        tool.setAnchorY(center.getY() - mouseInWorld.getY());
+        tool.setAnchorX(startCenter.getX() - mouseInWorld.getX());
+        tool.setAnchorY(startCenter.getY() - mouseInWorld.getY());
 
         event.consume();
     }
@@ -40,13 +42,20 @@ public class MoveState implements SelectionState {
                 Math.round(rawY / gridSize) * gridSize
         );
 
-        tool.updateUI(); // Handles und Linien mitziehen
-
+        tool.updateUI();
         event.consume();
     }
 
     @Override
     public void onMouseReleased(MouseEvent event, SelectionTool tool, Group world) {
+        Point2D endCenter = adapter.getCenter();
+
+        if (!endCenter.equals(startCenter)) {
+            MoveCommand moveCmd = new MoveCommand(adapter, startCenter, endCenter);
+            tool.getSelectionModel().getHistory().executeCommand(moveCmd);
+        }
+
         tool.setCurrentState(new IdleState());
+        event.consume();
     }
 }

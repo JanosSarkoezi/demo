@@ -63,4 +63,8 @@ public class CanvasController {
             this.currentTool.onActivate(drawingCanvas, world);
         }
     }
+
+    public Pane getDrawingCanvas() {
+        return drawingCanvas;
+    }
 }

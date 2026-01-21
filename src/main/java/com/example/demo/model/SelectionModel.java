@@ -12,6 +12,11 @@ public class SelectionModel {
     private final StringProperty statusMessage = new SimpleStringProperty("Bereit");
     private final javafx.collections.ObservableList<SmartConnection> allConnections =
             javafx.collections.FXCollections.observableArrayList();
+    private final CommandHistory history = new CommandHistory();
+
+    public CommandHistory getHistory() {
+        return history;
+    }
 
     public javafx.collections.ObservableList<SmartConnection> getAllConnections() {
         return allConnections;

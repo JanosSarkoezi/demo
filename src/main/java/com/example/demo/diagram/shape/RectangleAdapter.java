@@ -2,12 +2,8 @@ package com.example.demo.diagram.shape;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
-import javafx.scene.Node;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 
 import java.util.List;
 
@@ -125,8 +121,6 @@ public class RectangleAdapter implements ShapeAdapter {
             default -> throw new IllegalArgumentException("Unbekannter Punkt: " + name);
         };
     }
-
-    // In RectangleAdapter.java
 
     public void applyDisplayMode() {
         textArea.setEditable(false);
