@@ -16,10 +16,10 @@ public class RectangleAdapter implements ShapeAdapter {
         this.textArea = new TextArea("");
 
         // Bindings für Position und Größe
-        textArea.layoutXProperty().bind(rect.xProperty());
-        textArea.layoutYProperty().bind(rect.yProperty());
-        textArea.prefWidthProperty().bind(rect.widthProperty());
-        textArea.prefHeightProperty().bind(rect.heightProperty());
+        textArea.layoutXProperty().bind(rect.xProperty().add(4));
+        textArea.layoutYProperty().bind(rect.yProperty().add(4));
+        textArea.prefWidthProperty().bind(rect.widthProperty().subtract(8));
+        textArea.prefHeightProperty().bind(rect.heightProperty().subtract(8));
 
         textArea.setWrapText(true);
         textArea.setStyle(textArea.getStyle() + "-fx-alignment: center;");
