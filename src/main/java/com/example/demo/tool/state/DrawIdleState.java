@@ -13,6 +13,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.scene.shape.StrokeType;
 
 public class DrawIdleState implements DrawState {
     @Override
@@ -35,7 +36,7 @@ public class DrawIdleState implements DrawState {
 
         if (tool.getToolType() == ToolbarController.ToolType.RECTANGLE) {
             // Rectangle r = new Rectangle(pos.getX() - 20, pos.getY() - 20, 40, 40);
-            Rectangle r = new Rectangle(pos.getX(), pos.getY(), 40, 40);
+            Rectangle r = new Rectangle(pos.getX(), pos.getY(), 80, 80);
             RectangleAdapter ra = new RectangleAdapter(r);
             adapter = ra;
             shape = r;
@@ -50,6 +51,7 @@ public class DrawIdleState implements DrawState {
         shape.setUserData(adapter);
         shape.setStroke(Color.BLACK);
         shape.setStrokeWidth(3);
+        shape.setStrokeType(StrokeType.INSIDE);
         shape.setFill(Color.TRANSPARENT);
 
         world.getChildren().add(shape);

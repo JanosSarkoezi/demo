@@ -2,6 +2,7 @@ package com.example.demo.diagram.shape;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.paint.Color;
@@ -24,8 +25,8 @@ public class RectangleAdapter implements ShapeAdapter {
         textArea.prefWidthProperty().bind(rect.widthProperty());
         textArea.prefHeightProperty().bind(rect.heightProperty());
 
-        // Dein Design: Standard schwarz auf weiß
         textArea.setWrapText(true);
+        textArea.setStyle(textArea.getStyle() + "-fx-alignment: center;");
         applyDisplayMode(); // Startet im Anzeige-Modus
     }
 
@@ -125,29 +126,37 @@ public class RectangleAdapter implements ShapeAdapter {
         };
     }
 
+    // In RectangleAdapter.java
+
     public void applyDisplayMode() {
         textArea.setEditable(false);
         textArea.setMouseTransparent(true);
-        // Transparenter Hintergrund, schwarzer Text
-        textArea.setStyle(
-                "-fx-background-color: transparent; " +
-                        "-fx-control-inner-background: transparent; " +
-                        "-fx-text-fill: black; " +
-                        "-fx-background-insets: 0; " +
-                        "-fx-padding: 5;"
-        );
+
+        // Wir setzen ALLES auf transparent und entfernen Rahmen
+        textArea.getStyleClass().add("transparent-area");
+
+        // Der entscheidende Schlag gegen das Grau (aus rectangleInactive.png)
+        javafx.scene.Node content = textArea.lookup(".content");
+        if (content != null) {
+            // Hier setzen wir das Padding für den Text-Abstand nach innen
+            content.setStyle("-fx-background-color: transparent; -fx-padding: 10;");
+        }
+        textArea.applyCss();
     }
 
     public void applyEditMode() {
         textArea.setEditable(true);
         textArea.setMouseTransparent(false);
-        // Weißer Hintergrund beim Tippen, schwarzer Text, kein blauer Rahmen
-        textArea.setStyle(
-                "-fx-control-inner-background: white; " +
-                        "-fx-text-fill: black; " +
-                        "-fx-faint-focus-color: transparent; " +
-                        "-fx-focus-color: gray;" // Optional: ein dezentes Grau statt Blau
-        );
+
+        // Hier entfernen wir das blaue Leuchten (aus screenshot.png unten)
+        textArea.getStyleClass().add("transparent-area");
+
+        // Auch hier das Innere weiß machen
+        javafx.scene.Node content = textArea.lookup(".content");
+        if (content != null) {
+            content.setStyle("-fx-background-color: transparent; -fx-padding: 10;");
+        }
+        textArea.applyCss();
         textArea.requestFocus();
     }
 

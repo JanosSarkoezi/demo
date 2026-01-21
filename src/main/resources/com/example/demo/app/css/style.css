@@ -53,3 +53,8 @@
     -fx-font-weight: bold;
     -fx-text-fill: #555;
 }
+
+.transparent-area, .transparent-area .content {
+    -fx-background-color: transparent !important;
+    -fx-background-insets: 0 !important;
+}

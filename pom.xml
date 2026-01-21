@@ -75,6 +75,12 @@
                             <mainClass>com.example.demo/com.example.demo.app.ResizableNoteApp</mainClass>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>run4</id>
+                        <configuration>
+                            <mainClass>com.example.demo/com.example.demo.app.TextAreaApp</mainClass>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

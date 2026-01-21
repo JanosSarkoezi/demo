@@ -1,0 +1,5 @@
+/* Den Hauptcontainer und den inneren Content transparent machen */
+.transparent-area, .transparent-area .content {
+    -fx-background-color: transparent !important;
+    -fx-background-insets: 0 !important;
+}
