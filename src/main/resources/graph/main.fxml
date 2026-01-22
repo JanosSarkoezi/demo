@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="graph.controller.MainController">
+    <center>
+        <Pane fx:id="canvas" prefHeight="400" prefWidth="600" style="-fx-background-color: #f0f0f0;" />
+    </center>
+</BorderPane>

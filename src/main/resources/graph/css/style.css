@@ -1,0 +1,60 @@
+.toolbar {
+    -fx-background-color: #f4f4f4; /* Hellgrau */
+    -fx-border-color: #cccccc;      /* Trennlinie nach rechts */
+    -fx-border-width: 0 1 0 0;      /* Nur rechte Seite */
+}
+
+/* Grundstyling für die Icons */
+.tool-icon-circle {
+    -fx-fill: #f4f4f4;
+    -fx-stroke: #000;
+    -fx-stroke-width: 1.5;
+}
+
+.tool-icon-rect {
+    -fx-fill: #f4f4f4;
+    -fx-stroke: #000;
+    -fx-stroke-width: 1.5;
+}
+
+.tool-button {
+    -fx-alignment: CENTER_LEFT; /* Richtet den Inhalt (Graphic + Text) links aus */
+    -fx-content-display: LEFT;  /* Grafik links vom Text */
+    -fx-graphic-text-gap: 10;   /* Abstand zwischen Grafik-HBox und dem Button-Label */
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 4;
+}
+
+.tool-button:selected {
+    -fx-background-color: #dceefb;
+    -fx-border-color: #3498db;
+    -fx-border-width: 0 0 0 4; /* Ein schicker blauer Akzentbalken nur links */
+}
+
+/* Spezial-Effekt: Wenn der Button ausgewählt ist, leuchten die Icons */
+.tool-button:selected .tool-icon-circle {
+    -fx-fill: #aaaaaa;
+    /* -fx-effect: dropshadow(three-pass-box, rgba(52, 152, 219, 0.4), 5, 0, 0, 0); */
+}
+
+.tool-button:selected .tool-icon-rect {
+    -fx-fill: #aaaaaa;
+    /* -fx-effect: dropshadow(three-pass-box, rgba(230, 126, 34, 0.4), 5, 0, 0, 0); */
+}
+
+/* Textfarbe im Button bei Auswahl ändern */
+.tool-button:selected .label {
+    -fx-text-fill: #0078d7;
+    -fx-font-weight: bold;
+}
+
+.section-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #555;
+}
+
+.transparent-area, .transparent-area .content {
+    -fx-background-color: transparent !important;
+    -fx-background-insets: 0 !important;
+}

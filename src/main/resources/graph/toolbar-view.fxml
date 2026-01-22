@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<VBox fx:id="toolbarContainer" spacing="10.0" prefWidth="140.0"
+      stylesheets="@css/style.css" styleClass="toolbar"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="graph.controller.ToolbarController">
+    <padding>
+        <Insets top="15" right="10" bottom="15" left="10"/>
+    </padding>
+
+    <fx:define>
+        <ToggleGroup fx:id="toolGroup"/>
+    </fx:define>
+
+    <Label text="Shapes" styleClass="section-label"/>
+
+    <ToggleButton fx:id="circleButton" toggleGroup="$toolGroup"
+                  maxWidth="Infinity" styleClass="tool-button"
+                  text="_Circle" onAction="#onShapeToolSelected">
+        <tooltip><Tooltip text="Draw circle (Alt+C)"/></tooltip>
+        <graphic>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Circle radius="10.0" styleClass="tool-icon-circle"/>
+            </HBox>
+        </graphic>
+    </ToggleButton>
+
+    <ToggleButton fx:id="rectButton" toggleGroup="$toolGroup"
+                  maxWidth="Infinity" styleClass="tool-button"
+                  text="_Rectangle" onAction="#onShapeToolSelected">
+        <tooltip><Tooltip text="Draw rectangle (Alt+R)"/></tooltip>
+        <graphic>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Rectangle width="18.0" height="18.0" styleClass="tool-icon-rect"/>
+            </HBox>
+        </graphic>
+    </ToggleButton>
+
+    <Separator>
+        <VBox.margin><Insets top="10" bottom="10"/></VBox.margin>
+    </Separator>
+
+    <Label text="Settings" style="-fx-font-weight: bold; -fx-text-fill: #555;"/>
+    <CheckBox fx:id="snapToGridCheckbox" text="Snap to Grid" selected="true" />
+    <CheckBox fx:id="stickyCheckbox" text="Verkleben" />
+</VBox>

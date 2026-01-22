@@ -59,7 +59,7 @@
                     <execution>
                         <id>run1</id>
                         <configuration>
-                            <mainClass>com.example.demo/com.example.demo.app.HelloApplication</mainClass>
+                            <mainClass>graph/graph.App</mainClass>
                         </configuration>
                     </execution>
 
