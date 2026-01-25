@@ -1,7 +1,7 @@
 package graph.controller;
 
 import graph.model.GraphModel;
-import graph.state.InteractionState;
+import graph.core.state.InteractionState;
 import javafx.scene.Group;
 
 public interface GraphCanvas {

@@ -1,7 +1,7 @@
 package graph.controller;
 
-import graph.state.CreateNodeState;
-import graph.state.IdleState;
+import graph.core.state.CreateNodeState;
+import graph.core.state.IdleState;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;

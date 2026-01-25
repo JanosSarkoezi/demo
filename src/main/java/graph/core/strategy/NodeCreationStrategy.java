@@ -1,4 +1,4 @@
-package graph.state.strategy;
+package graph.core.strategy;
 
 import graph.controller.GraphCanvas;
 import graph.model.GraphNode;

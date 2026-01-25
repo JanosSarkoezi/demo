@@ -1,8 +1,8 @@
 package graph.controller; // Entsprechend deiner Struktur im Screenshot
 
-import graph.state.registry.NodeRegistry;
-import graph.state.strategy.CircleCreationStrategy;
-import graph.state.strategy.RectangleCreationStrategy;
+import graph.core.registry.NodeRegistry;
+import graph.core.strategy.CircleCreationStrategy;
+import graph.core.strategy.RectangleCreationStrategy;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 

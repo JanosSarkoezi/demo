@@ -1,4 +1,4 @@
-package graph.model.adapter;
+package graph.core.adapter;
 
 import javafx.scene.Cursor;
 import javafx.scene.paint.Color;

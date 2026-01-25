@@ -1,4 +1,4 @@
-package graph.state;
+package graph.core.state;
 
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;

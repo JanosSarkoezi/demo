@@ -1,4 +1,4 @@
-package graph.model.adapter;
+package graph.core.adapter;
 
 import javafx.beans.Observable;
 import javafx.geometry.Point2D;

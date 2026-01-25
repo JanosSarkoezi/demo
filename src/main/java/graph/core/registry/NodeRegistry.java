@@ -1,6 +1,6 @@
-package graph.state.registry;
+package graph.core.registry;
 
-import graph.state.strategy.NodeCreationStrategy;
+import graph.core.strategy.NodeCreationStrategy;
 
 import java.util.HashMap;
 import java.util.Map;

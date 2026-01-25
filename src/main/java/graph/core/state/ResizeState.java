@@ -1,7 +1,7 @@
-package graph.state;
+package graph.core.state;
 
 import graph.controller.MainController;
-import graph.model.adapter.ShapeAdapter;
+import graph.core.adapter.ShapeAdapter;
 import javafx.geometry.Point2D;
 import javafx.scene.layout.Pane;
 import javafx.scene.input.MouseEvent;

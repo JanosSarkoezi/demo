@@ -1,9 +1,9 @@
-package graph.state.strategy;
+package graph.core.strategy;
 
 import graph.controller.GraphCanvas;
 import graph.model.GraphNode;
 import graph.model.RectangleModel;
-import graph.state.factory.NodeViewFactory;
+import graph.core.factory.NodeViewFactory;
 import javafx.scene.Node;
 
 public class RectangleCreationStrategy implements NodeCreationStrategy {

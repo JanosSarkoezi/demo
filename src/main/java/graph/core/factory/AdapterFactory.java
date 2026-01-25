@@ -1,11 +1,11 @@
-package graph.state.factory;
+package graph.core.factory;
 
 import graph.model.CircleModel;
 import graph.model.GraphNode;
 import graph.model.RectangleModel;
-import graph.model.adapter.CircleAdapter;
-import graph.model.adapter.RectangleAdapter;
-import graph.model.adapter.ShapeAdapter;
+import graph.core.adapter.CircleAdapter;
+import graph.core.adapter.RectangleAdapter;
+import graph.core.adapter.ShapeAdapter;
 
 public class AdapterFactory {
     public static ShapeAdapter createAdapter(GraphNode model) {

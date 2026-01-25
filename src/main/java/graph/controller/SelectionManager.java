@@ -1,10 +1,10 @@
 package graph.controller;
 
 import graph.model.GraphNode;
-import graph.model.adapter.ResizeHandle;
-import graph.model.adapter.ShapeAdapter;
-import graph.state.ResizeState;
-import graph.state.factory.AdapterFactory;
+import graph.core.adapter.ResizeHandle;
+import graph.core.adapter.ShapeAdapter;
+import graph.core.state.ResizeState;
+import graph.core.factory.AdapterFactory;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.scene.Group;

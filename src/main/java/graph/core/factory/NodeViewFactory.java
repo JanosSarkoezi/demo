@@ -1,4 +1,4 @@
-package graph.state.factory;
+package graph.core.factory;
 
 import graph.model.CircleModel;
 import graph.model.RectangleModel;

@@ -1,8 +1,8 @@
 package graph.controller;
 
 import graph.model.GraphModel;
-import graph.state.IdleState;
-import graph.state.InteractionState;
+import graph.core.state.IdleState;
+import graph.core.state.InteractionState;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;

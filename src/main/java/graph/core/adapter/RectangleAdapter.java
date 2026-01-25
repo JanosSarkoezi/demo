@@ -1,11 +1,10 @@
-package graph.model.adapter;
+package graph.core.adapter;
 
 import graph.model.RectangleModel;
 import javafx.beans.Observable;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import java.util.List;
-import javafx.scene.shape.Shape;
 
 public class RectangleAdapter implements ShapeAdapter {
     private final RectangleModel model;

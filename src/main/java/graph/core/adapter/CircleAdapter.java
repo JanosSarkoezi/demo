@@ -1,4 +1,4 @@
-package graph.model.adapter;
+package graph.core.adapter;
 
 import graph.model.CircleModel;
 import javafx.beans.Observable;

@@ -1,20 +1,13 @@
-package graph.state;
+package graph.core.state;
 
 import graph.controller.MainController;
-import graph.model.CircleModel;
 import graph.model.GraphNode;
-import graph.model.RectangleModel;
-import graph.state.registry.NodeRegistry;
-import graph.state.strategy.NodeCreationStrategy;
+import graph.core.registry.NodeRegistry;
+import graph.core.strategy.NodeCreationStrategy;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.control.TextArea;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 
 public class CreateNodeState implements InteractionState {
     private final MainController main;

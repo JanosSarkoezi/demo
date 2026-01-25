@@ -1,9 +1,9 @@
-package graph.state.strategy;
+package graph.core.strategy;
 
 import graph.controller.GraphCanvas;
 import graph.model.CircleModel;
 import graph.model.GraphNode;
-import graph.state.factory.NodeViewFactory;
+import graph.core.factory.NodeViewFactory;
 import javafx.scene.shape.Circle;
 
 public class CircleCreationStrategy implements NodeCreationStrategy {
