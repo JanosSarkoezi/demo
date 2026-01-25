@@ -18,18 +18,18 @@ public class ConnectionState implements InteractionState {
 
     private GraphNode startNode;
     private int startPortIndex = -1;
+    private Circle activeStartPort; // Um die Farbe später zurückzusetzen
 
     public ConnectionState(MainController main) {
         this.main = main;
         this.previewLine.setStroke(Color.CORNFLOWERBLUE);
         this.previewLine.setStrokeWidth(2.0);
         this.previewLine.getStrokeDashArray().addAll(6.0, 4.0);
-        this.previewLine.setMouseTransparent(true); // Verhindert, dass die Linie Klicks abfängt
+        this.previewLine.setMouseTransparent(true); // Verhindert, dass die Linie Klicks blockiert
     }
 
     @Override
     public void handleMousePressed(MouseEvent event, Pane canvas) {
-        // Nutzt die default-Methode aus dem Interface
         GraphNode node = findModel(event.getPickResult().getIntersectedNode());
 
         // 1. Auswahl-Logik (Ctrl + Klick)
@@ -39,24 +39,31 @@ public class ConnectionState implements InteractionState {
             return;
         }
 
-        // 2. Klick auf blauen Port (Start oder Ende)
+        // 2. Klick auf einen Port
         if (event.getTarget() instanceof Circle port && Color.CORNFLOWERBLUE.equals(port.getFill())) {
             if (startNode == null) {
+                // START festlegen
                 startNode = (GraphNode) port.getProperties().get("node");
                 startPortIndex = (int) port.getProperties().get("portIndex");
+                activeStartPort = port;
 
-                // Linie starten: Erster Punkt ist das Zentrum des Ports
-                previewLine.getPoints().setAll(port.getCenterX(), port.getCenterY());
-                // Zweiten Punkt für das Gummiband zur Maus hinzufügen
-                previewLine.getPoints().addAll(event.getX(), event.getY());
-                canvas.getChildren().add(previewLine);
+                // Optisches Feedback: Port wird Gold
+                port.setFill(Color.GOLD);
+                port.setRadius(7);
+
+                // Linie initialisieren (Startpunkt + ein Punkt für die Maus)
+                previewLine.getPoints().setAll(port.getCenterX(), port.getCenterY(), event.getX(), event.getY());
+                if (!canvas.getChildren().contains(previewLine)) {
+                    canvas.getChildren().add(previewLine);
+                }
             } else {
+                // ENDE festlegen
                 finishConnection(port, canvas);
             }
             return;
         }
 
-        // 3. Gelbe Wegpunkte setzen
+        // 3. Wegpunkte setzen
         if (startNode != null) {
             createYellowWaypoint(event.getX(), event.getY(), canvas);
         }
@@ -80,52 +87,54 @@ public class ConnectionState implements InteractionState {
             waypoint.setCenterX(e.getX());
             waypoint.setCenterY(e.getY());
             updateLinePath();
-            e.consume();
         });
 
         yellowWaypoints.add(waypoint);
         canvas.getChildren().add(waypoint);
 
-        // Einen neuen Punkt für das Gummiband hinzufügen
+        // Füge einen neuen Punkt in die Polyline ein, damit das Gummiband weitergeht
         previewLine.getPoints().addAll(x, y);
-        updateLinePath();
     }
 
     private void updateLinePath() {
         if (previewLine.getPoints().isEmpty()) return;
 
-        // Wir behalten den Startpunkt (Index 0,1) bei
+        // Startpunkt behalten
         double startX = previewLine.getPoints().get(0);
         double startY = previewLine.getPoints().get(1);
 
-        List<Double> newPoints = new ArrayList<>();
-        newPoints.add(startX);
-        newPoints.add(startY);
+        List<Double> points = new ArrayList<>();
+        points.add(startX);
+        points.add(startY);
 
+        // Alle gelben Punkte hinzufügen
         for (Circle cp : yellowWaypoints) {
-            newPoints.add(cp.getCenterX());
-            newPoints.add(cp.getCenterY());
+            points.add(cp.getCenterX());
+            points.add(cp.getCenterY());
         }
 
-        // Gummiband-Punkt (Ende) hinzufügen, falls wir noch nicht fertig sind
-        newPoints.add(newPoints.get(newPoints.size()-2));
-        newPoints.add(newPoints.get(newPoints.size()-1));
+        // Den "Maus-Punkt" am Ende wieder hinzufügen (wird durch MouseMoved aktualisiert)
+        points.add(points.get(points.size() - 2));
+        points.add(points.get(points.size() - 1));
 
-        previewLine.getPoints().setAll(newPoints);
+        previewLine.getPoints().setAll(points);
     }
 
     private void finishConnection(Circle targetPort, Pane canvas) {
-        // TODO: Hier ein neues 'ConnectionModel' Objekt erstellen und dem GraphModel hinzufügen
-        // Damit die Verbindung dauerhaft bleibt!
-
+        // Aufräumen
         canvas.getChildren().remove(previewLine);
         canvas.getChildren().removeAll(yellowWaypoints);
-        yellowWaypoints.clear();
-        startNode = null;
+        if (activeStartPort != null) {
+            activeStartPort.setFill(Color.CORNFLOWERBLUE);
+            activeStartPort.setRadius(5);
+        }
 
-        // Alle Selektionen aufheben nach erfolgreichem Verbinden
+        // Alle Nodes deselektieren
         main.getGraphModel().getNodes().forEach(n -> n.setSelected(false));
         main.getSelectionRenderer().updatePorts(main.getGraphModel().getNodes(), (GraphView) canvas);
+
+        yellowWaypoints.clear();
+        startNode = null;
     }
 
     @Override public void handleMouseDragged(MouseEvent event, Pane canvas) {}
