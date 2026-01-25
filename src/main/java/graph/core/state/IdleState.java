@@ -20,7 +20,7 @@ public class IdleState implements InteractionState {
 
         if (model != null) {
             if (event.isAltDown()) {
-                main.getCanvas().getSelectionManager().select(model);
+                main.getSelectionModel().select(model);
             } else {
                 MoveState moveState = new MoveState(model, main);
                 main.getCanvas().setCurrentState(moveState);
@@ -32,7 +32,7 @@ public class IdleState implements InteractionState {
             main.getCanvas().setCurrentState(panningState);
 
             panningState.handleMousePressed(event, canvas);
-            main.getCanvas().getSelectionManager().clearSelection();
+            main.getSelectionModel().clear();
         }
     }
 

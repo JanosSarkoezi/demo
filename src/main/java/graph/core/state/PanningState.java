@@ -21,8 +21,8 @@ public class PanningState implements InteractionState {
         startMouseY = event.getY();
 
         // Und den aktuellen Versatz der "Welt"
-        startTranslateX = main.getCanvas().getWorld().getTranslateX();
-        startTranslateY = main.getCanvas().getWorld().getTranslateY();
+        startTranslateX = main.getCanvas().getView().getWorld().getTranslateX();
+        startTranslateY = main.getCanvas().getView().getWorld().getTranslateY();
     }
 
     @Override
@@ -32,8 +32,8 @@ public class PanningState implements InteractionState {
         double deltaY = event.getY() - startMouseY;
 
         // Die gesamte Welt-Gruppe verschieben
-        main.getCanvas().getWorld().setTranslateX(startTranslateX + deltaX);
-        main.getCanvas().getWorld().setTranslateY(startTranslateY + deltaY);
+        main.getCanvas().getView().getWorld().setTranslateX(startTranslateX + deltaX);
+        main.getCanvas().getView().getWorld().setTranslateY(startTranslateY + deltaY);
     }
 
     @Override

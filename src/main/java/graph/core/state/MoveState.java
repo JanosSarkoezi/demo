@@ -19,7 +19,7 @@ public class MoveState implements InteractionState {
     @Override
     public void handleMousePressed(MouseEvent event, Pane canvas) {
         // Umrechnung in Welt-Koordinaten
-        Point2D mouseInWorld = main.getCanvas().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
+        Point2D mouseInWorld = main.getCanvas().getView().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
         Point2D currentCenter = model.getCenter();
         main.getStatusLabel().setText(currentCenter.toString());
 
@@ -31,7 +31,7 @@ public class MoveState implements InteractionState {
 
     @Override
     public void handleMouseDragged(MouseEvent event, Pane canvas) {
-        Point2D mouseInWorld = main.getCanvas().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
+        Point2D mouseInWorld = main.getCanvas().getView().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
 
         // Ziel-Zentrum berechnen
         double targetCenterX = mouseInWorld.getX() + anchorX;

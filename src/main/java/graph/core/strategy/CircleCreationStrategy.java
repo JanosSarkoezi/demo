@@ -1,20 +1,21 @@
 package graph.core.strategy;
 
-import graph.controller.GraphCanvas;
+import graph.controller.MainController;
 import graph.model.CircleModel;
 import graph.model.GraphNode;
 import graph.core.factory.NodeViewFactory;
+import graph.view.GraphView;
 import javafx.scene.shape.Circle;
 
 public class CircleCreationStrategy implements NodeCreationStrategy {
     @Override
-    public GraphNode create(double x, double y, GraphCanvas canvas) {
+    public GraphNode create(double x, double y, GraphView view, MainController main) {
         CircleModel model = new CircleModel(x, y);
-        canvas.getGraphModel().getNodes().add(model);
+        main.getGraphModel().getNodes().add(model);
 
         Circle circleView = NodeViewFactory.createCircleShape(model);
 
-        canvas.getShapeLayer().getChildren().add(circleView);
+        view.getShapeLayer().getChildren().add(circleView);
 
         return model;
     }

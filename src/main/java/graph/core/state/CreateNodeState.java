@@ -18,7 +18,7 @@ public class CreateNodeState implements InteractionState {
 
     @Override
     public void handleMousePressed(MouseEvent event, Pane canvasPane) {
-        Point2D p = main.getCanvas().getShapeLayer().sceneToLocal(event.getSceneX(), event.getSceneY());
+        Point2D p = main.getCanvas().getView().getShapeLayer().sceneToLocal(event.getSceneX(), event.getSceneY());
         String tool = main.getToolbar().getSelectedTool();
         Node hit = event.getPickResult().getIntersectedNode();
         GraphNode model = findModel(hit);
@@ -27,7 +27,7 @@ public class CreateNodeState implements InteractionState {
         NodeCreationStrategy strategy = NodeRegistry.getStrategy(tool);
 
         if (strategy != null) {
-            strategy.create(p.getX(), p.getY(), main.getCanvas());
+            strategy.create(p.getX(), p.getY(), main.getCanvas().getView(), main);
         }
     }
 

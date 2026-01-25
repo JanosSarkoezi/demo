@@ -35,7 +35,7 @@ public class ResizeState implements InteractionState {
     @Override
     public void handleMouseDragged(MouseEvent event, Pane canvas) {
         // Mausposition in Welt-Koordinaten umrechnen (wichtig für Zoom/Panning)
-        Point2D mouseInWorld = main.getCanvas().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
+        Point2D mouseInWorld = main.getCanvas().getView().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
 
         // Die Logik steckt im Adapter (Rechteck verschiebt Kanten, Kreis ändert Radius)
         adapter.resize(handleName, mouseInWorld);

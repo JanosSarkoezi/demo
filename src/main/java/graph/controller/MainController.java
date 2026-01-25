@@ -1,23 +1,42 @@
-package graph.controller; // Entsprechend deiner Struktur im Screenshot
+package graph.controller;
 
 import graph.core.registry.NodeRegistry;
 import graph.core.strategy.CircleCreationStrategy;
 import graph.core.strategy.RectangleCreationStrategy;
+import graph.model.GraphModel;
+import graph.model.SelectionModel;
+import graph.view.SelectionRenderer;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
 public class MainController {
     @FXML private Label statusLabel;
-
     @FXML private ToolbarController toolbarController;
     @FXML private CanvasController canvasController;
 
+    // Neue zentrale Instanzen
+    private SelectionModel selectionModel;
+    private SelectionRenderer selectionRenderer;
+
+    private final GraphModel graphModel = new GraphModel();
+
     @FXML
     public void initialize() {
+        // 1. Daten-Modell initialisieren
+        selectionModel = new SelectionModel();
+
         if (canvasController != null && toolbarController != null) {
-            // Übergabe der Toolbar-Referenz an den Canvas-Controller
             canvasController.init(this);
             toolbarController.init(this);
+
+            // 2. Renderer initialisieren (verknüpft UI-Layer mit Modell)
+            // Wir nutzen den uiLayer vom CanvasController
+            selectionRenderer = new SelectionRenderer(
+                    canvasController.getView().getUiLayer(),
+                    selectionModel,
+                    this
+            );
+
             statusLabel.setText("Editor bereit");
         }
 
@@ -25,15 +44,16 @@ public class MainController {
         NodeRegistry.register("RECTANGLE", new RectangleCreationStrategy());
     }
 
-    public ToolbarController getToolbar() {
-        return toolbarController;
+    public GraphModel getGraphModel() {
+        return graphModel;
     }
 
-    public CanvasController getCanvas() {
-        return canvasController;
+    // Getter, damit States auf die Auswahl zugreifen können
+    public SelectionModel getSelectionModel() {
+        return selectionModel;
     }
 
-    public Label getStatusLabel() {
-        return statusLabel;
-    }
+    public ToolbarController getToolbar() { return toolbarController; }
+    public CanvasController getCanvas() { return canvasController; }
+    public Label getStatusLabel() { return statusLabel; }
 }
