@@ -26,4 +26,7 @@ public interface ShapeAdapter {
     Point2D getHandlePosition(String handleName);
     Cursor getHandleCursor(String handleName);
     Observable[] getHandleDependencies(String handleName);
+
+    int getPortCount();
+    Point2D getPortPosition(int index);
 }

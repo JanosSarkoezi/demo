@@ -7,8 +7,13 @@ import graph.core.factory.AdapterFactory;
 import graph.core.state.ResizeState;
 import graph.model.SelectionModel;
 import graph.model.GraphNode;
+import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.DoubleBinding;
+import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 
 public class SelectionRenderer {
     private final Group uiLayer;
@@ -50,6 +55,30 @@ public class SelectionRenderer {
                 main.getCanvas().setCurrentState(new ResizeState(adapter, name, main));
                 e.consume();
             });
+        }
+    }
+
+    private void drawPorts(GraphNode node, GraphView view) {
+        ShapeAdapter adapter = AdapterFactory.createAdapter(node);
+
+        for (int i = 0; i < adapter.getPortCount(); i++) {
+            final int portIndex = i;
+
+            Circle bluePort = new Circle(5, Color.CORNFLOWERBLUE);
+            bluePort.setStroke(Color.WHITE);
+
+            bluePort.getProperties().put("node", node);
+            bluePort.getProperties().put("portIndex", portIndex);
+
+            Observable[] deps = adapter.getHandleDependencies("ANY");
+
+            bluePort.centerXProperty().bind(Bindings.createDoubleBinding(
+                    () -> adapter.getPortPosition(portIndex).getX(), deps));
+
+            bluePort.centerYProperty().bind(Bindings.createDoubleBinding(
+                    () -> adapter.getPortPosition(portIndex).getY(), deps));
+
+            view.getUiLayer().getChildren().add(bluePort);
         }
     }
 }

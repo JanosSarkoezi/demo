@@ -40,6 +40,17 @@
         </graphic>
     </ToggleButton>
 
+    <ToggleButton fx:id="connectButton" toggleGroup="$toolGroup"
+                  maxWidth="Infinity" styleClass="tool-button"
+                  text="_Verbinden" onAction="#onShapeToolSelected">
+        <tooltip><Tooltip text="Polygon-Verbindung erstellen (Alt+V)"/></tooltip>
+        <graphic>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Polyline points="0,10, 10,0, 20,10" stroke="CORNFLOWERBLUE" strokeWidth="2"/>
+            </HBox>
+        </graphic>
+    </ToggleButton>
+
     <Separator>
         <VBox.margin><Insets top="10" bottom="10"/></VBox.margin>
     </Separator>

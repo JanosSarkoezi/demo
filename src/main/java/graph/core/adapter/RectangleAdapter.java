@@ -110,5 +110,24 @@ public class RectangleAdapter implements ShapeAdapter {
         };
     }
 
+    @Override
+    public int getPortCount() { return 4; }
+
+    @Override
+    public Point2D getPortPosition(int index) {
+        double x = model.xProperty().get();
+        double y = model.yProperty().get();
+        double w = model.widthProperty().get();
+        double h = model.heightProperty().get();
+
+        return switch (index) {
+            case 0 -> new Point2D(x + w / 2, y);      // Norden
+            case 1 -> new Point2D(x + w, y + h / 2);  // Osten
+            case 2 -> new Point2D(x + w / 2, y + h);  // Süden
+            case 3 -> new Point2D(x, y + h / 2);      // Westen
+            default -> throw new IndexOutOfBoundsException();
+        };
+    }
+
     @Override public List<String> getHandleNames() { return List.of("NW", "N", "NE", "W", "E", "SW", "S", "SE"); }
 }

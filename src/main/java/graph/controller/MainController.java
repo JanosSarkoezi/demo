@@ -1,6 +1,8 @@
 package graph.controller;
 
 import graph.core.registry.NodeRegistry;
+import graph.core.state.CreateNodeState;
+import graph.core.state.IdleState;
 import graph.core.strategy.CircleCreationStrategy;
 import graph.core.strategy.RectangleCreationStrategy;
 import graph.model.GraphModel;
@@ -42,6 +44,21 @@ public class MainController {
 
         NodeRegistry.register("CIRCLE", new CircleCreationStrategy());
         NodeRegistry.register("RECTANGLE", new RectangleCreationStrategy());
+    }
+
+    // Im MainController.java
+    public void updateCanvasState() {
+        // Wir nutzen deine Methode!
+        String tool = toolbarController.getSelectedTool();
+
+        switch (tool) {
+            case "CIRCLE", "RECTANGLE" ->
+                    canvasController.setCurrentState(new CreateNodeState(this));
+//            case "CONNECT" ->
+//                    canvasController.setCurrentState(new ConnectionState(this));
+            default ->
+                    canvasController.setCurrentState(new IdleState(this));
+        }
     }
 
     public GraphModel getGraphModel() {

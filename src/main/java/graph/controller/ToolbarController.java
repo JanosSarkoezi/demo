@@ -8,8 +8,11 @@ import javafx.scene.control.*;
 
 public class ToolbarController {
     @FXML private ToggleGroup toolGroup;
+
     @FXML private ToggleButton circleButton;
     @FXML private ToggleButton rectButton;
+    @FXML private ToggleButton connectButton;
+
     @FXML private CheckBox snapToGridCheckbox;
     @FXML private CheckBox stickyCheckbox;
 
@@ -18,8 +21,11 @@ public class ToolbarController {
     public String getSelectedTool() {
         ToggleButton selected = (ToggleButton) toolGroup.getSelectedToggle();
         if (selected == null) return "NONE";
+
         if (selected == circleButton) return "CIRCLE";
         if (selected == rectButton) return "RECTANGLE";
+        if (selected == connectButton) return "CONNECT";
+
         return "NONE";
     }
 
@@ -29,12 +35,7 @@ public class ToolbarController {
 
     @FXML
     private void onShapeToolSelected(ActionEvent event) {
-        if (toolGroup.getSelectedToggle() != null) {
-            main.getCanvas().setCurrentState(new CreateNodeState(main));
-        } else {
-            // Button wurde deselektiert -> Zurück in den Leerlauf
-            main.getCanvas().setCurrentState(new IdleState(main));
-        }
+        main.updateCanvasState();
     }
 
     public boolean isStickyActive() {

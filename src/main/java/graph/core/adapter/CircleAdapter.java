@@ -54,13 +54,28 @@ public class CircleAdapter implements ShapeAdapter {
 
     @Override
     public Observable[] getHandleDependencies(String handleName) {
-        // Da jeder Handle am Rand des Kreises sitzt, muss er neu berechnet werden,
-        // wenn sich entweder das Zentrum (x, y) oder die Größe (radius) ändert.
         return new Observable[] {
                 model.xProperty(),
                 model.yProperty(),
                 model.radiusProperty()
         };
+    }
+
+    @Override
+    public int getPortCount() { return 8; }
+
+    @Override
+    public Point2D getPortPosition(int index) {
+        double cx = model.xProperty().get();
+        double cy = model.yProperty().get();
+        double r  = model.radiusProperty().get();
+
+        // Wir starten bei 0 Grad (Osten) und gehen im Uhrzeigersinn
+        double angle = Math.toRadians(index * 45);
+        return new Point2D(
+                cx + r * Math.cos(angle),
+                cy + r * Math.sin(angle)
+        );
     }
 
     @Override public List<String> getHandleNames() { return List.of("N", "S", "E", "W"); }
