@@ -8,6 +8,7 @@ import graph.core.strategy.CircleCreationStrategy;
 import graph.core.strategy.RectangleCreationStrategy;
 import graph.model.GraphModel;
 import graph.model.SelectionModel;
+import graph.view.ConnectionRenderer;
 import graph.view.SelectionRenderer;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -20,6 +21,7 @@ public class MainController {
     // Neue zentrale Instanzen
     private SelectionModel selectionModel;
     private SelectionRenderer selectionRenderer;
+    private ConnectionRenderer connectionRenderer;
 
     private final GraphModel graphModel = new GraphModel();
 
@@ -27,6 +29,7 @@ public class MainController {
     public void initialize() {
         // 1. Daten-Modell initialisieren
         selectionModel = new SelectionModel();
+        connectionRenderer = new ConnectionRenderer(this);
 
         if (canvasController != null && toolbarController != null) {
             canvasController.init(this);
@@ -73,6 +76,10 @@ public class MainController {
 
     public SelectionRenderer getSelectionRenderer() {
         return selectionRenderer;
+    }
+
+    public ConnectionRenderer getConnectionRenderer() {
+        return connectionRenderer;
     }
 
     public ToolbarController getToolbar() { return toolbarController; }

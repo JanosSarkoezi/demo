@@ -1,16 +1,42 @@
 package graph.model;
 
-public class ConnectionModel {
-    private final GraphNode start;
-    private final GraphNode end;
+import javafx.geometry.Point2D;
 
-    public ConnectionModel(GraphNode start, GraphNode end) {
-        // Hier kann man später Validierungslogik einbauen:
-        // z.B. nur K -> R oder R -> K erlauben.
-        this.start = start;
-        this.end = end;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ConnectionModel {
+    private final GraphNode startNode;
+    private final int startPortIndex;
+    private final GraphNode endNode;
+    private final int endPortIndex;
+    private final List<WaypointModel> waypoints; // Die gelben Punkte als Koordinaten
+
+    public ConnectionModel(GraphNode start, int sIdx, GraphNode end, int eIdx, List<WaypointModel> waypoints) {
+        this.startNode = start;
+        this.startPortIndex = sIdx;
+        this.endNode = end;
+        this.endPortIndex = eIdx;
+        this.waypoints = new ArrayList<>(waypoints);
     }
 
-    public GraphNode getStart() { return start; }
-    public GraphNode getEnd() { return end; }
+    public GraphNode getStartNode() {
+        return startNode;
+    }
+
+    public int getStartPortIndex() {
+        return startPortIndex;
+    }
+
+    public GraphNode getEndNode() {
+        return endNode;
+    }
+
+    public int getEndPortIndex() {
+        return endPortIndex;
+    }
+
+    public List<WaypointModel> getWaypoints() {
+        return waypoints;
+    }
 }

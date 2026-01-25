@@ -1,8 +1,11 @@
 package graph.core.state;
 
 import graph.controller.MainController;
+import graph.model.ConnectionModel;
 import graph.model.GraphNode;
+import graph.model.WaypointModel;
 import graph.view.GraphView;
+import javafx.geometry.Point2D;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -10,6 +13,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polyline;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ConnectionState implements InteractionState {
     private final MainController main;
@@ -18,60 +22,57 @@ public class ConnectionState implements InteractionState {
 
     private GraphNode startNode;
     private int startPortIndex = -1;
-    private Circle activeStartPort; // Um die Farbe später zurückzusetzen
+    private Circle activeStartPort;
+    private final List<WaypointModel> waypointModels = new ArrayList<>();
 
     public ConnectionState(MainController main) {
         this.main = main;
         this.previewLine.setStroke(Color.CORNFLOWERBLUE);
         this.previewLine.setStrokeWidth(2.0);
         this.previewLine.getStrokeDashArray().addAll(6.0, 4.0);
-        this.previewLine.setMouseTransparent(true); // Verhindert, dass die Linie Klicks blockiert
+        this.previewLine.setMouseTransparent(true);
     }
 
     @Override
     public void handleMousePressed(MouseEvent event, Pane canvas) {
+        GraphView view = (GraphView) canvas;
         GraphNode node = findModel(event.getPickResult().getIntersectedNode());
 
-        // 1. Auswahl-Logik (Ctrl + Klick)
-        if (event.isControlDown() && node != null) {
+        if (node != null) {
             node.setSelected(!node.isSelected());
-            main.getSelectionRenderer().updatePorts(main.getGraphModel().getNodes(), (GraphView) canvas);
+            main.getSelectionRenderer().updatePorts(main.getGraphModel().getNodes(), view);
             return;
         }
 
-        // 2. Klick auf einen Port
+        // 2. Klick auf einen Port (Start oder Ende)
         if (event.getTarget() instanceof Circle port && Color.CORNFLOWERBLUE.equals(port.getFill())) {
             if (startNode == null) {
-                // START festlegen
                 startNode = (GraphNode) port.getProperties().get("node");
-                startPortIndex = (int) port.getProperties().get("portIndex");
+                startPortIndex = (int) port.getProperties().get("portIndex"); // Jetzt gespeichert!
                 activeStartPort = port;
 
-                // Optisches Feedback: Port wird Gold
                 port.setFill(Color.GOLD);
                 port.setRadius(7);
 
-                // Linie initialisieren (Startpunkt + ein Punkt für die Maus)
                 previewLine.getPoints().setAll(port.getCenterX(), port.getCenterY(), event.getX(), event.getY());
-                if (!canvas.getChildren().contains(previewLine)) {
-                    canvas.getChildren().add(previewLine);
+
+                if (!view.getUiLayer().getChildren().contains(previewLine)) {
+                    view.getUiLayer().getChildren().add(previewLine);
                 }
             } else {
-                // ENDE festlegen
-                finishConnection(port, canvas);
+                finishConnection(port, view);
             }
             return;
         }
 
-        // 3. Wegpunkte setzen
+        // 3. Wegpunkte setzen (nur im uiLayer)
         if (startNode != null) {
-            createYellowWaypoint(event.getX(), event.getY(), canvas);
+            createYellowWaypoint(event.getX(), event.getY(), view);
         }
     }
 
     @Override
     public void handleMouseMoved(MouseEvent event, Pane canvas) {
-        // Gummiband-Effekt: Der letzte Punkt der Polyline folgt der Maus
         if (startNode != null && !previewLine.getPoints().isEmpty()) {
             int size = previewLine.getPoints().size();
             previewLine.getPoints().set(size - 2, event.getX());
@@ -79,60 +80,66 @@ public class ConnectionState implements InteractionState {
         }
     }
 
-    private void createYellowWaypoint(double x, double y, Pane canvas) {
-        Circle waypoint = new Circle(x, y, 4, Color.YELLOW);
-        waypoint.setStroke(Color.ORANGE);
+    private void createYellowWaypoint(double x, double y, GraphView view) {
+        WaypointModel wp = new WaypointModel(x, y);
+        waypointModels.add(wp);
 
-        waypoint.setOnMouseDragged(e -> {
-            waypoint.setCenterX(e.getX());
-            waypoint.setCenterY(e.getY());
-            updateLinePath();
-        });
+        // Temporärer Kreis für die Vorschau
+        Circle tempCircle = new Circle(x, y, 4, Color.YELLOW);
+        tempCircle.centerXProperty().bindBidirectional(wp.xProperty());
+        tempCircle.centerYProperty().bindBidirectional(wp.yProperty());
 
-        yellowWaypoints.add(waypoint);
-        canvas.getChildren().add(waypoint);
+        view.getUiLayer().getChildren().add(tempCircle);
+        yellowWaypoints.add(tempCircle); // Für das Aufräumen in finishConnection
 
-        // Füge einen neuen Punkt in die Polyline ein, damit das Gummiband weitergeht
+        // Polyline-Punkt hinzufügen
         previewLine.getPoints().addAll(x, y);
+        updateLinePath();
     }
 
     private void updateLinePath() {
         if (previewLine.getPoints().isEmpty()) return;
 
-        // Startpunkt behalten
         double startX = previewLine.getPoints().get(0);
         double startY = previewLine.getPoints().get(1);
+        double lastX = previewLine.getPoints().get(previewLine.getPoints().size() - 2);
+        double lastY = previewLine.getPoints().get(previewLine.getPoints().size() - 1);
 
-        List<Double> points = new ArrayList<>();
-        points.add(startX);
-        points.add(startY);
+        previewLine.getPoints().clear();
+        previewLine.getPoints().addAll(startX, startY);
 
-        // Alle gelben Punkte hinzufügen
         for (Circle cp : yellowWaypoints) {
-            points.add(cp.getCenterX());
-            points.add(cp.getCenterY());
+            previewLine.getPoints().addAll(cp.getCenterX(), cp.getCenterY());
         }
 
-        // Den "Maus-Punkt" am Ende wieder hinzufügen (wird durch MouseMoved aktualisiert)
-        points.add(points.get(points.size() - 2));
-        points.add(points.get(points.size() - 1));
-
-        previewLine.getPoints().setAll(points);
+        // Den Maus-Punkt am Ende bewahren
+        previewLine.getPoints().addAll(lastX, lastY);
     }
 
-    private void finishConnection(Circle targetPort, Pane canvas) {
-        // Aufräumen
-        canvas.getChildren().remove(previewLine);
-        canvas.getChildren().removeAll(yellowWaypoints);
+    private void finishConnection(Circle targetPort, GraphView view) {
+        GraphNode endNode = (GraphNode) targetPort.getProperties().get("node");
+        int endPortIndex = (int) targetPort.getProperties().get("portIndex");
+
+        // WICHTIG: Übergib die Liste der WaypointModels direkt, nicht Point2D!
+        ConnectionModel newConn = new ConnectionModel(
+                startNode, startPortIndex,
+                endNode, endPortIndex,
+                new ArrayList<>(waypointModels) // Nutze die Modelle statt Point2D
+        );
+
+        main.getConnectionRenderer().addConnection(newConn, view);
+
+        // Aufräumen des UI-Layers (die temporären Kreise verschwinden)
+        view.getUiLayer().getChildren().remove(previewLine);
+        view.getUiLayer().getChildren().removeAll(yellowWaypoints);
+
         if (activeStartPort != null) {
-            activeStartPort.setFill(Color.CORNFLOWERBLUE);
+            activeStartPort.setFill(javafx.scene.paint.Color.CORNFLOWERBLUE);
             activeStartPort.setRadius(5);
         }
 
-        // Alle Nodes deselektieren
-        main.getGraphModel().getNodes().forEach(n -> n.setSelected(false));
-        main.getSelectionRenderer().updatePorts(main.getGraphModel().getNodes(), (GraphView) canvas);
-
+        // Zurücksetzen für die nächste Verbindung
+        waypointModels.clear();
         yellowWaypoints.clear();
         startNode = null;
     }
