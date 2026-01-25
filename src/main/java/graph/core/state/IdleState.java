@@ -36,12 +36,6 @@ public class IdleState implements InteractionState {
         }
     }
 
-    private GraphNode findModel(Node node) {
-        if (node == null) return null;
-        if (node.getUserData() instanceof GraphNode) return (GraphNode) node.getUserData();
-        return findModel(node.getParent());
-    }
-
     @Override public void handleMouseDragged(MouseEvent event, Pane canvas) {}
     @Override public void handleMouseReleased(MouseEvent event, Pane canvas) {}
 }

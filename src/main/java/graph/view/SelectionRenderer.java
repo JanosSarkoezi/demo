@@ -9,11 +9,11 @@ import graph.model.SelectionModel;
 import graph.model.GraphNode;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.DoubleBinding;
-import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+
+import java.util.List;
 
 public class SelectionRenderer {
     private final Group uiLayer;
@@ -58,7 +58,25 @@ public class SelectionRenderer {
         }
     }
 
-    private void drawPorts(GraphNode node, GraphView view) {
+    public void updatePorts(List<GraphNode> allNodes, GraphView view) {
+        // 1. Alle blauen Ports entfernen, deren Nodes nicht mehr selektiert sind
+        view.getUiLayer().getChildren().removeIf(n -> {
+            if (n instanceof Circle && Color.CORNFLOWERBLUE.equals(((Circle) n).getFill())) {
+                GraphNode node = (GraphNode) n.getProperties().get("node");
+                return !node.isSelected(); // Weg damit, wenn nicht mehr selektiert
+            }
+            return false;
+        });
+
+        // 2. Ports für alle Nodes hinzufügen, die selektiert sind, aber noch keine Ports haben
+        for (GraphNode node : allNodes) {
+            if (node.isSelected() && !isNodeAlreadyPorted(node, view)) {
+                drawPortsForSingleNode(node, view);
+            }
+        }
+    }
+
+    private void drawPortsForSingleNode(GraphNode node, GraphView view) {
         ShapeAdapter adapter = AdapterFactory.createAdapter(node);
 
         for (int i = 0; i < adapter.getPortCount(); i++) {
@@ -67,18 +85,24 @@ public class SelectionRenderer {
             Circle bluePort = new Circle(5, Color.CORNFLOWERBLUE);
             bluePort.setStroke(Color.WHITE);
 
+            // Metadaten für den ConnectionState speichern
             bluePort.getProperties().put("node", node);
             bluePort.getProperties().put("portIndex", portIndex);
 
+            // Bindings erstellen, damit Ports bei Bewegung mitwandern
             Observable[] deps = adapter.getHandleDependencies("ANY");
-
             bluePort.centerXProperty().bind(Bindings.createDoubleBinding(
                     () -> adapter.getPortPosition(portIndex).getX(), deps));
-
             bluePort.centerYProperty().bind(Bindings.createDoubleBinding(
                     () -> adapter.getPortPosition(portIndex).getY(), deps));
 
             view.getUiLayer().getChildren().add(bluePort);
         }
+    }
+
+    private boolean isNodeAlreadyPorted(GraphNode node, GraphView view) {
+        return view.getUiLayer().getChildren().stream()
+                .filter(n -> n instanceof Circle && Color.CORNFLOWERBLUE.equals(((Circle) n).getFill()))
+                .anyMatch(n -> n.getProperties().get("node") == node);
     }
 }

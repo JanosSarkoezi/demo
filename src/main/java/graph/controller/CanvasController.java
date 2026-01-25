@@ -26,6 +26,7 @@ public class CanvasController {
         graphView.setOnMousePressed(e -> currentState.handleMousePressed(e, graphView));
         graphView.setOnMouseDragged(e -> currentState.handleMouseDragged(e, graphView));
         graphView.setOnMouseReleased(e -> currentState.handleMouseReleased(e, graphView));
+        graphView.setOnMouseMoved(e -> currentState.handleMouseMoved(e, graphView));
         graphView.setOnScroll(graphView::handleZoom);
     }
 

@@ -1,6 +1,7 @@
 package graph.controller;
 
 import graph.core.registry.NodeRegistry;
+import graph.core.state.ConnectionState;
 import graph.core.state.CreateNodeState;
 import graph.core.state.IdleState;
 import graph.core.strategy.CircleCreationStrategy;
@@ -54,8 +55,8 @@ public class MainController {
         switch (tool) {
             case "CIRCLE", "RECTANGLE" ->
                     canvasController.setCurrentState(new CreateNodeState(this));
-//            case "CONNECT" ->
-//                    canvasController.setCurrentState(new ConnectionState(this));
+            case "CONNECT" ->
+                    canvasController.setCurrentState(new ConnectionState(this));
             default ->
                     canvasController.setCurrentState(new IdleState(this));
         }
@@ -68,6 +69,10 @@ public class MainController {
     // Getter, damit States auf die Auswahl zugreifen können
     public SelectionModel getSelectionModel() {
         return selectionModel;
+    }
+
+    public SelectionRenderer getSelectionRenderer() {
+        return selectionRenderer;
     }
 
     public ToolbarController getToolbar() { return toolbarController; }
