@@ -4,6 +4,7 @@ import graph.controller.MainController;
 import graph.core.adapter.ShapeAdapter;
 import graph.core.factory.AdapterFactory;
 import graph.model.ConnectionModel;
+import graph.model.GraphNode;
 import graph.model.WaypointModel;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
@@ -18,7 +19,7 @@ import javafx.scene.shape.Polyline;
 import java.util.List;
 
 /**
- * Verantwortlich für die dauerhafte Darstellung einer Verbindung und ihrer Wegpunkte.
+ * Verantwortlich für die Darstellung von Verbindungen, Wegpunkten und Ports.
  */
 public class ConnectionRenderer {
 
@@ -28,106 +29,131 @@ public class ConnectionRenderer {
         this.main = main;
     }
 
+    /**
+     * Aktualisiert die Sichtbarkeit der Ports basierend auf dem Selektionsstatus der Knoten.
+     * Ersetzt die alte Logik aus dem SelectionRenderer.
+     */
+    public void updatePorts(List<GraphNode> allNodes, GraphView view) {
+        // 1. Alle alten Ports entfernen
+        hideAllPorts(view);
+
+        // 2. Neue Ports für selektierte Knoten zeichnen
+        for (GraphNode node : allNodes) {
+            if (node.isSelected()) {
+                drawPortsForNode(node, view);
+            }
+        }
+    }
+
+    /**
+     * Zeichnet die Ports für einen spezifischen Knoten und bindet sie an dessen Position.
+     */
+    private void drawPortsForNode(GraphNode node, GraphView view) {
+        ShapeAdapter adapter = AdapterFactory.createAdapter(node);
+
+        for (int i = 0; i < adapter.getPortCount(); i++) {
+            final int portIndex = i;
+            Circle port = new Circle(5, Color.CORNFLOWERBLUE);
+            port.setStroke(Color.WHITE);
+            port.getStyleClass().add("port");
+
+            // Metadaten für das Picking im State (InitialConnectionState)
+            port.getProperties().put("node", node);
+            port.getProperties().put("portIndex", portIndex);
+
+            // Bindings: Ports folgen dem Knoten bei Bewegung oder Resize
+            Observable[] deps = adapter.getHandleDependencies("ANY");
+            port.centerXProperty().bind(Bindings.createDoubleBinding(
+                    () -> adapter.getPortPosition(portIndex).getX(), deps));
+            port.centerYProperty().bind(Bindings.createDoubleBinding(
+                    () -> adapter.getPortPosition(portIndex).getY(), deps));
+
+            view.getUiLayer().getChildren().add(port);
+        }
+    }
+
+    /**
+     * Entfernt alle Port-Grafiken vom UI-Layer.
+     */
+    public void hideAllPorts(GraphView view) {
+        view.getUiLayer().getChildren().removeIf(n -> n.getStyleClass().contains("port"));
+    }
+
+    /**
+     * Erstellt eine permanente visuelle Verbindung im Shape-Layer.
+     */
     public void addConnection(ConnectionModel model, GraphView view) {
         Polyline line = new Polyline();
         line.setStroke(Color.BLACK);
         line.setStrokeWidth(2);
 
-        // Adapter für Start- und End-Shapes holen
         ShapeAdapter startAdapter = AdapterFactory.createAdapter(model.getStartNode());
         ShapeAdapter endAdapter = AdapterFactory.createAdapter(model.getEndNode());
 
-        // Bindings für die dynamischen Port-Positionen (Start)
         Observable[] startDeps = startAdapter.getHandleDependencies("ANY");
         DoubleBinding startX = Bindings.createDoubleBinding(() ->
                 startAdapter.getPortPosition(model.getStartPortIndex()).getX(), startDeps);
         DoubleBinding startY = Bindings.createDoubleBinding(() ->
                 startAdapter.getPortPosition(model.getStartPortIndex()).getY(), startDeps);
 
-        // Bindings für die dynamischen Port-Positionen (Ende)
         Observable[] endDeps = endAdapter.getHandleDependencies("ANY");
         DoubleBinding endX = Bindings.createDoubleBinding(() ->
                 endAdapter.getPortPosition(model.getEndPortIndex()).getX(), endDeps);
         DoubleBinding endY = Bindings.createDoubleBinding(() ->
                 endAdapter.getPortPosition(model.getEndPortIndex()).getY(), endDeps);
 
-        // Zentraler Trigger für die Neuzeichnung der Linie
         InvalidationListener updateTrigger = obs -> updateLinePoints(line, startX, startY, model.getWaypoints(), endX, endY);
 
-        // Alle Abhängigkeiten registrieren: Start, Ende und alle Wegpunkte
         startX.addListener(updateTrigger);
         startY.addListener(updateTrigger);
         endX.addListener(updateTrigger);
         endY.addListener(updateTrigger);
 
+        updateLinePoints(line, startX, startY, model.getWaypoints(), endX, endY);
+        view.getShapeLayer().getChildren().add(line);
+
         for (WaypointModel wp : model.getWaypoints()) {
             wp.xProperty().addListener(updateTrigger);
             wp.yProperty().addListener(updateTrigger);
-            // Für jeden Wegpunkt einen interaktiven Griff zeichnen
             drawWaypointHandle(wp, view);
         }
-
-        // Initiales Zeichnen
-        updateLinePoints(line, startX, startY, model.getWaypoints(), endX, endY);
-
-        // Die Linie zum permanenten Shape-Layer hinzufügen
-        view.getShapeLayer().getChildren().add(line);
     }
 
-    /**
-     * Aktualisiert die Punkte der Polyline basierend auf den aktuellen Bindings und Wegpunkten.
-     */
     private void updateLinePoints(Polyline line, DoubleBinding sx, DoubleBinding sy,
                                   List<WaypointModel> wps, DoubleBinding ex, DoubleBinding ey) {
         line.getPoints().clear();
-
-        // Startpunkt hinzufügen
         line.getPoints().addAll(sx.get(), sy.get());
-
-        // Wegpunkte hinzufügen
         for (WaypointModel wp : wps) {
             line.getPoints().addAll(wp.getX(), wp.getY());
         }
-
-        // Endpunkt hinzufügen
         line.getPoints().addAll(ex.get(), ey.get());
     }
 
-    /**
-     * Erstellt einen interaktiven gelben Kreis, der direkt das WaypointModel manipuliert.
-     */
     private void drawWaypointHandle(WaypointModel wp, GraphView view) {
-        Circle handle = new Circle(4, Color.YELLOW);
+        Circle handle = new Circle(8, Color.YELLOW);
         handle.setStroke(Color.ORANGE);
+        handle.setOpacity(0.5);
 
-        // Bindung: Der Kreis folgt dem Modell (bidirektional)
         handle.centerXProperty().bindBidirectional(wp.xProperty());
         handle.centerYProperty().bindBidirectional(wp.yProperty());
 
-        // Lokaler Drag-Handler: Konsumiert Events, damit das State-Pattern nicht stört
         handle.setOnMousePressed(Event::consume);
-
         handle.setOnMouseDragged(event -> {
-            // Umrechnung in Welt-Koordinaten (analog zum MoveState)
             Point2D local = view.getShapeLayer().sceneToLocal(event.getSceneX(), event.getSceneY());
-
             double targetX = local.getX();
             double targetY = local.getY();
 
-            // Snap-to-Grid Logik aus MoveState übernehmen
             if (main.getToolbar().isStickyActive()) {
-                double gridSize = 40.0; // Wert aus deinem MoveState
+                double gridSize = 40.0;
                 targetX = Math.round(targetX / gridSize) * gridSize;
                 targetY = Math.round(targetY / gridSize) * gridSize;
             }
 
             wp.setX(targetX);
             wp.setY(targetY);
-
             event.consume();
         });
 
-        // Griffe ebenfalls in den Shape-Layer, damit sie permanent sind
         view.getShapeLayer().getChildren().add(handle);
     }
 }

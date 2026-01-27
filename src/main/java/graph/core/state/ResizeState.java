@@ -3,66 +3,60 @@ package graph.core.state;
 import graph.controller.MainController;
 import graph.core.adapter.ShapeAdapter;
 import javafx.geometry.Point2D;
-import javafx.scene.layout.Pane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 
-public class ResizeState implements InteractionState {
-    private final ShapeAdapter adapter;
-    private final String handleName;
-    private final MainController main;
+public record ResizeState(
+        ShapeAdapter adapter,
+        String handleName,
+        Point2D startPos,
+        double startW,
+        double startH,
+        MainController main
+) implements InteractionState {
 
-    // Snapshots für das Undo-System
-    private Point2D startPos;
-    private double startW;
-    private double startH;
-
+    // Bequemer Konstruktor: Wir sichern die Werte automatisch beim Start
     public ResizeState(ShapeAdapter adapter, String handleName, MainController main) {
-        this.adapter = adapter;
-        this.handleName = handleName;
-        this.main = main;
-
-        // Initialzustand VOR der Änderung sichern
-        this.startPos = adapter.getPosition();
-        this.startW = adapter.getWidth();
-        this.startH = adapter.getHeight();
+        this(
+                adapter,
+                handleName,
+                adapter.getPosition(),
+                adapter.getWidth(),
+                adapter.getHeight(),
+                main
+        );
     }
 
     @Override
-    public void handleMousePressed(MouseEvent event, Pane canvas) {
-        event.consume();
+    public InteractionState handleMousePressed(MouseEvent event, Pane canvas) {
+        return this; // Bereits initialisiert
     }
 
     @Override
-    public void handleMouseDragged(MouseEvent event, Pane canvas) {
-        // Mausposition in Welt-Koordinaten umrechnen (wichtig für Zoom/Panning)
-        Point2D mouseInWorld = main.getCanvas().getView().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
+    public InteractionState handleMouseDragged(MouseEvent event, Pane canvas) {
+        // Umrechnung in Welt-Koordinaten (wichtig für Zoom/Panning)
+        Point2D mouseInWorld = main.getCanvas().getView().getWorld()
+                .sceneToLocal(event.getSceneX(), event.getSceneY());
 
-        // Die Logik steckt im Adapter (Rechteck verschiebt Kanten, Kreis ändert Radius)
+        // Die Logik bleibt im Adapter (Rechteck verschiebt Kanten, Kreis ändert Radius)
         adapter.resize(handleName, mouseInWorld);
 
-        event.consume();
+        return this;
     }
 
     @Override
-    public void handleMouseReleased(MouseEvent event, Pane canvas) {
-        // Endzustand prüfen
+    public InteractionState handleMouseReleased(MouseEvent event, Pane canvas) {
+        // Am Ende prüfen wir die Differenz für das Undo-System
         double endW = adapter.getWidth();
         double endH = adapter.getHeight();
         Point2D endPos = adapter.getPosition();
 
-        // Nur ein Command erstellen, wenn sich die Größe oder Position wirklich geändert hat
-//        if (startW != endW || startH != endH || !startPos.equals(endPos)) {
-//            ResizeCommand cmd = new ResizeCommand(
-//                    adapter,
-//                    startPos, startW, startH,
-//                    endPos, endW, endH
-//            );
-//            // In die History pushen (Undo/Redo Support)
-//            main.getHistory().executeCommand(cmd);
-//        }
+        if (startW != endW || startH != endH || !startPos.equals(endPos)) {
+            // Hier würde dein Command/History System getriggert werden
+            // main.getHistory().executeCommand(new ResizeCommand(adapter, startPos, startW, startH, endPos, endW, endH));
+            System.out.println("Resize beendet: Command erstellt.");
+        }
 
-        // Zurück in den IdleState (Wartet auf neue Aktionen)
-        main.getCanvas().setCurrentState(new IdleState(main));
-        event.consume();
+        return getNextBaseState(main);
     }
 }

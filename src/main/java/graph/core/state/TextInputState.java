@@ -7,40 +7,54 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
-public class TextInputState implements InteractionState {
-    private final MainController main;
-    private final RectangleModel model;
-    private final StackPane view;
-
-    public TextInputState(RectangleModel model, StackPane view, MainController main) {
-        this.model = model;
-        this.view = view;
-        this.main = main;
-    }
+public record TextInputState(
+        RectangleModel model,
+        StackPane view,
+        MainController main
+) implements InteractionState {
 
     @Override
-    public void handleMousePressed(MouseEvent event, Pane canvas) {
-        TextArea textArea = (TextArea) view.getChildren().stream()
-                .filter(n -> n instanceof TextArea)
-                .findFirst().orElse(null);
+    public InteractionState handleMousePressed(MouseEvent event, Pane canvas) {
+        TextArea textArea = findTextArea();
 
         if (textArea != null) {
             textArea.setMouseTransparent(false);
             textArea.setEditable(true);
             textArea.requestFocus();
+            // Wir bleiben in diesem State, solange wir tippen
+            return this;
         }
+
+        // Falls kein TextArea gefunden wurde (sollte nicht passieren), abbrechen
+        return getNextBaseState(main);
     }
 
-    @Override public void handleMouseDragged(MouseEvent event, Pane canvas) {}
-    @Override public void handleMouseReleased(MouseEvent event, Pane canvas) {
-        TextArea textArea = (TextArea) view.getChildren().stream()
-                .filter(n -> n instanceof TextArea)
-                .findFirst().orElse(null);
+    @Override
+    public InteractionState handleMouseReleased(MouseEvent event, Pane canvas) {
+        // In deinem alten Code hast du hier beendet.
+        // Oft will man aber erst beenden, wenn man *außerhalb* klickt.
+        // Für den Moment behalten wir deine Logik bei:
+        stopEditing();
+        return getNextBaseState(main);
+    }
 
+    @Override
+    public InteractionState handleMouseDragged(MouseEvent event, Pane canvas) {
+        return this;
+    }
+
+    // Hilfsmethode zum "Sperren" des Textfeldes
+    private void stopEditing() {
+        TextArea textArea = findTextArea();
         if (textArea != null) {
             textArea.setEditable(false);
             textArea.setMouseTransparent(true);
-            main.getCanvas().setCurrentState(new IdleState(main));
         }
+    }
+
+    private TextArea findTextArea() {
+        return (TextArea) view.getChildren().stream()
+                .filter(n -> n instanceof TextArea)
+                .findFirst().orElse(null);
     }
 }
