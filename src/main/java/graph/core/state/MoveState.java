@@ -6,58 +6,33 @@ import javafx.geometry.Point2D;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
-public class MoveState implements InteractionState {
-    private final MainController main;
-    private final GraphNode model;
-    private double anchorX, anchorY;
+public record MoveState(GraphNode model, double anchorX, double anchorY, MainController main)
+        implements InteractionState {
 
-    public MoveState(GraphNode model, MainController main) {
-        this.model = model;
-        this.main = main;
+    @Override
+    public InteractionState handleMousePressed(MouseEvent event, Pane canvas) {
+        return this;
     }
 
     @Override
-    public void handleMousePressed(MouseEvent event, Pane canvas) {
-        // Umrechnung in Welt-Koordinaten
-        Point2D mouseInWorld = main.getCanvas().getView().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
-        Point2D currentCenter = model.getCenter();
-        main.getStatusLabel().setText(currentCenter.toString());
-
-        // Anker speichern: Abstand von Maus zur Mitte des Objekts
-        anchorX = currentCenter.getX() - mouseInWorld.getX();
-        anchorY = currentCenter.getY() - mouseInWorld.getY();
-        event.consume();
-    }
-
-    @Override
-    public void handleMouseDragged(MouseEvent event, Pane canvas) {
+    public InteractionState handleMouseDragged(MouseEvent event, Pane canvas) {
         Point2D mouseInWorld = main.getCanvas().getView().getWorld().sceneToLocal(event.getSceneX(), event.getSceneY());
 
-        // Ziel-Zentrum berechnen
-        double targetCenterX = mouseInWorld.getX() + anchorX;
-        double targetCenterY = mouseInWorld.getY() + anchorY;
+        double targetX = mouseInWorld.getX() + anchorX;
+        double targetY = mouseInWorld.getY() + anchorY;
 
         if (main.getToolbar().isStickyActive()) {
-            double gridSize = 40.0;
-            targetCenterX = Math.round(targetCenterX / gridSize) * gridSize;
-            targetCenterY = Math.round(targetCenterY / gridSize) * gridSize;
+            targetX = Math.round(targetX / 40.0) * 40.0;
+            targetY = Math.round(targetY / 40.0) * 40.0;
         }
 
-        // Das Modell weiß selbst, wie es x/y setzen muss, um dieses Zentrum zu erreichen
-        model.setCenter(targetCenterX, targetCenterY);
-        main.getStatusLabel().setText(model.getCenter().toString());
-        event.consume();
+        model.setCenter(targetX, targetY);
+        return this; // Wir bleiben im MoveState
     }
 
     @Override
-    public void handleMouseReleased(MouseEvent event, Pane canvas) {
-        String selectedTool = main.getToolbar().getSelectedTool();
-
-        if (!selectedTool.equals("NONE")) {
-            main.getCanvas().setCurrentState(new CreateNodeState(main));
-        } else {
-            main.getCanvas().setCurrentState(new IdleState(main));
-        }
-        event.consume();
+    public InteractionState handleMouseReleased(MouseEvent event, Pane canvas) {
+        // Nutzt die default-Logik aus dem Interface
+        return getNextBaseState(main);
     }
 }

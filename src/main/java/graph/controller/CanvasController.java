@@ -1,5 +1,6 @@
 package graph.controller;
 
+import graph.core.state.Cleanable;
 import graph.core.state.IdleState;
 import graph.core.state.InteractionState;
 import graph.view.GraphView;
@@ -22,16 +23,53 @@ public class CanvasController {
     }
 
     private void setupEvents() {
-        // Der Controller fängt die Events ab und reicht sie an den State weiter
-        graphView.setOnMousePressed(e -> currentState.handleMousePressed(e, graphView));
-        graphView.setOnMouseDragged(e -> currentState.handleMouseDragged(e, graphView));
-        graphView.setOnMouseReleased(e -> currentState.handleMouseReleased(e, graphView));
-        graphView.setOnMouseMoved(e -> currentState.handleMouseMoved(e, graphView));
+        // Die Einzeiler, die du magst – jetzt mit Zuweisung!
+        graphView.setOnMousePressed(e -> {
+            setCurrentState(currentState.handleMousePressed(e, graphView));
+            e.consume();
+        });
+        graphView.setOnMouseDragged(e -> {
+            setCurrentState(currentState.handleMouseDragged(e, graphView));
+            e.consume();
+        });
+        graphView.setOnMouseReleased(e -> {
+            setCurrentState(currentState.handleMouseReleased(e, graphView));
+            e.consume();
+        });
+
+        graphView.setOnMouseMoved(e -> {
+            setCurrentState(currentState.handleMouseMoved(e, graphView));
+        });
+
         graphView.setOnScroll(graphView::handleZoom);
     }
 
-    public void setCurrentState(InteractionState newState) {
-        this.currentState = newState;
+//    private void updateState(InteractionState nextState) {
+//        if (currentState instanceof Cleanable old && nextState.getClass() != currentState.getClass()) {
+//            old.cleanup(graphView);
+//        }
+//        this.currentState = nextState;
+//    }
+
+    public void setCurrentState(InteractionState nextState) {
+        if (nextState == null) return;
+
+        // --- ZENTRALES LOGGING ---
+        String oldStateName = (currentState != null) ? currentState.getClass().getSimpleName() : "null";
+        String newStateName = nextState.getClass().getSimpleName();
+        String currentTool = main.getToolbar().getSelectedTool();
+
+        if (!oldStateName.equals(newStateName)) {
+            System.out.printf("[STATE CHANGE] %s -> %s (Tool: %s)%n",
+                    oldStateName, newStateName, currentTool);
+        }
+        // -------------------------
+
+        if (currentState instanceof Cleanable old && nextState.getClass() != currentState.getClass()) {
+            old.cleanup(graphView);
+        }
+
+        this.currentState = nextState;
     }
 
     // Zugriffsmethoden für die States (stark vereinfacht)

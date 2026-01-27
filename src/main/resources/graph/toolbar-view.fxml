@@ -57,5 +57,5 @@
 
     <Label text="Settings" style="-fx-font-weight: bold; -fx-text-fill: #555;"/>
     <CheckBox fx:id="snapToGridCheckbox" text="Snap to Grid" selected="true" />
-    <CheckBox fx:id="stickyCheckbox" text="Verkleben" />
+    <CheckBox fx:id="stickyCheckbox" text="Glue" />
 </VBox>

@@ -6,144 +6,133 @@ import graph.model.GraphNode;
 import graph.model.WaypointModel;
 import graph.view.GraphView;
 import javafx.geometry.Point2D;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polyline;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class ConnectionState implements InteractionState {
-    private final MainController main;
-    private final List<Circle> yellowWaypoints = new ArrayList<>();
-    private final Polyline previewLine = new Polyline();
+public record ConnectionState(
+        GraphNode startNode,
+        int startPortIndex,
+        Circle activeStartPort,
+        List<WaypointModel> waypoints,
+        Polyline previewLine,
+        List<Circle> waypointCircles,
+        MainController main
+) implements InteractionState {
 
-    private GraphNode startNode;
-    private int startPortIndex = -1;
-    private Circle activeStartPort;
-    private final List<WaypointModel> waypointModels = new ArrayList<>();
+    // Bequemer Konstruktor für den Start im IdleState
+    public ConnectionState(GraphNode startNode, int startPortIndex, Circle startPort, MainController main) {
+        this(startNode, startPortIndex, startPort, new ArrayList<>(),
+                initPreviewLine(), new ArrayList<>(), main);
 
-    public ConnectionState(MainController main) {
-        this.main = main;
-        this.previewLine.setStroke(Color.CORNFLOWERBLUE);
-        this.previewLine.setStrokeWidth(2.0);
-        this.previewLine.getStrokeDashArray().addAll(6.0, 4.0);
-        this.previewLine.setMouseTransparent(true);
+        // Visuelles Feedback für den Startport
+        startPort.setFill(Color.ORANGE);
+        startPort.setRadius(8);
+    }
+
+    private static Polyline initPreviewLine() {
+        Polyline line = new Polyline();
+        line.setStroke(Color.CORNFLOWERBLUE);
+        line.setStrokeWidth(2.0);
+        line.getStrokeDashArray().addAll(6.0, 4.0);
+        line.setMouseTransparent(true);
+        return line;
     }
 
     @Override
-    public void handleMousePressed(MouseEvent event, Pane canvas) {
+    public InteractionState handleMousePressed(MouseEvent event, Pane canvas) {
         GraphView view = (GraphView) canvas;
-        GraphNode node = findModel(event.getPickResult().getIntersectedNode());
 
-        if (node != null) {
-            node.setSelected(!node.isSelected());
-            main.getSelectionRenderer().updatePorts(main.getGraphModel().getNodes(), view);
-            return;
+        // Abbrechen mit Rechtsklick
+        if (event.getButton() == MouseButton.SECONDARY) {
+            cleanupUI(view);
+            return getNextBaseState(main);
         }
 
-        // 2. Klick auf einen Port (Start oder Ende)
-        if (event.getTarget() instanceof Circle port && Color.CORNFLOWERBLUE.equals(port.getFill())) {
-            if (startNode == null) {
-                startNode = (GraphNode) port.getProperties().get("node");
-                startPortIndex = (int) port.getProperties().get("portIndex"); // Jetzt gespeichert!
-                activeStartPort = port;
+        var hit = event.getPickResult().getIntersectedNode();
 
-                port.setFill(Color.GOLD);
-                port.setRadius(7);
-
-                previewLine.getPoints().setAll(port.getCenterX(), port.getCenterY(), event.getX(), event.getY());
-
-                if (!view.getUiLayer().getChildren().contains(previewLine)) {
-                    view.getUiLayer().getChildren().add(previewLine);
-                }
-            } else {
-                finishConnection(port, view);
-            }
-            return;
+        // 1. Ziel-Port Prüfung
+        if (hit instanceof Circle targetPort && "port".equals(targetPort.getStyleClass().toString())) {
+            finishConnection(targetPort, view);
+            cleanupUI(view);
+            return getNextBaseState(main);
         }
 
-        // 3. Wegpunkte setzen (nur im uiLayer)
-        if (startNode != null) {
-            createYellowWaypoint(event.getX(), event.getY(), view);
-        }
+        // 2. Wegpunkt hinzufügen (Klick in die Leere)
+        Point2D p = view.getUiLayer().sceneToLocal(event.getSceneX(), event.getSceneY());
+
+        // Daten aktualisieren
+        List<WaypointModel> nextWaypoints = new ArrayList<>(waypoints);
+        nextWaypoints.add(new WaypointModel(p.getX(), p.getY()));
+
+        // UI aktualisieren (gelber Punkt)
+        Circle wpCircle = new Circle(p.getX(), p.getY(), 4, Color.GOLD);
+        wpCircle.setMouseTransparent(true);
+        view.getUiLayer().getChildren().add(wpCircle);
+
+        List<Circle> nextCircles = new ArrayList<>(waypointCircles);
+        nextCircles.add(wpCircle);
+
+        // Wir geben einen neuen Record mit den aktualisierten Listen zurück
+        return new ConnectionState(startNode, startPortIndex, activeStartPort,
+                nextWaypoints, previewLine, nextCircles, main);
     }
 
     @Override
-    public void handleMouseMoved(MouseEvent event, Pane canvas) {
-        if (startNode != null && !previewLine.getPoints().isEmpty()) {
-            int size = previewLine.getPoints().size();
-            previewLine.getPoints().set(size - 2, event.getX());
-            previewLine.getPoints().set(size - 1, event.getY());
+    public InteractionState handleMouseMoved(MouseEvent event, Pane canvas) {
+        GraphView view = (GraphView) canvas;
+        Point2D p = view.getUiLayer().sceneToLocal(event.getSceneX(), event.getSceneY());
+
+        // Vorschau-Linie zeichnen
+        if (!view.getUiLayer().getChildren().contains(previewLine)) {
+            view.getUiLayer().getChildren().add(previewLine);
         }
-    }
-
-    private void createYellowWaypoint(double x, double y, GraphView view) {
-        WaypointModel wp = new WaypointModel(x, y);
-        waypointModels.add(wp);
-
-        // Temporärer Kreis für die Vorschau
-        Circle tempCircle = new Circle(x, y, 4, Color.YELLOW);
-        tempCircle.centerXProperty().bindBidirectional(wp.xProperty());
-        tempCircle.centerYProperty().bindBidirectional(wp.yProperty());
-
-        view.getUiLayer().getChildren().add(tempCircle);
-        yellowWaypoints.add(tempCircle); // Für das Aufräumen in finishConnection
-
-        // Polyline-Punkt hinzufügen
-        previewLine.getPoints().addAll(x, y);
-        updateLinePath();
-    }
-
-    private void updateLinePath() {
-        if (previewLine.getPoints().isEmpty()) return;
-
-        double startX = previewLine.getPoints().get(0);
-        double startY = previewLine.getPoints().get(1);
-        double lastX = previewLine.getPoints().get(previewLine.getPoints().size() - 2);
-        double lastY = previewLine.getPoints().get(previewLine.getPoints().size() - 1);
 
         previewLine.getPoints().clear();
-        previewLine.getPoints().addAll(startX, startY);
+        // Startpunkt (Port)
+        Point2D startP = view.getUiLayer().sceneToLocal(activeStartPort.localToScene(Point2D.ZERO));
+        previewLine.getPoints().addAll(startP.getX() + 5, startP.getY() + 5);
 
-        for (Circle cp : yellowWaypoints) {
-            previewLine.getPoints().addAll(cp.getCenterX(), cp.getCenterY());
+        // Alle Zwischen-Wegpunkte
+        for (Circle c : waypointCircles) {
+            previewLine.getPoints().addAll(c.getCenterX(), c.getCenterY());
         }
 
-        // Den Maus-Punkt am Ende bewahren
-        previewLine.getPoints().addAll(lastX, lastY);
+        // Maus-Position
+        previewLine.getPoints().addAll(p.getX(), p.getY());
+
+        return this;
     }
 
     private void finishConnection(Circle targetPort, GraphView view) {
         GraphNode endNode = (GraphNode) targetPort.getProperties().get("node");
         int endPortIndex = (int) targetPort.getProperties().get("portIndex");
 
-        // WICHTIG: Übergib die Liste der WaypointModels direkt, nicht Point2D!
         ConnectionModel newConn = new ConnectionModel(
                 startNode, startPortIndex,
                 endNode, endPortIndex,
-                new ArrayList<>(waypointModels) // Nutze die Modelle statt Point2D
+                new ArrayList<>(waypoints)
         );
 
         main.getConnectionRenderer().addConnection(newConn, view);
-
-        // Aufräumen des UI-Layers (die temporären Kreise verschwinden)
-        view.getUiLayer().getChildren().remove(previewLine);
-        view.getUiLayer().getChildren().removeAll(yellowWaypoints);
-
-        if (activeStartPort != null) {
-            activeStartPort.setFill(javafx.scene.paint.Color.CORNFLOWERBLUE);
-            activeStartPort.setRadius(5);
-        }
-
-        // Zurücksetzen für die nächste Verbindung
-        waypointModels.clear();
-        yellowWaypoints.clear();
-        startNode = null;
     }
 
-    @Override public void handleMouseDragged(MouseEvent event, Pane canvas) {}
-    @Override public void handleMouseReleased(MouseEvent event, Pane canvas) {}
+    private void cleanupUI(GraphView view) {
+        view.getUiLayer().getChildren().remove(previewLine);
+        view.getUiLayer().getChildren().removeAll(waypointCircles);
+
+        if (activeStartPort != null) {
+            activeStartPort.setFill(Color.CORNFLOWERBLUE);
+            activeStartPort.setRadius(5);
+        }
+    }
+
+    @Override public InteractionState handleMouseDragged(MouseEvent event, Pane canvas) { return this; }
+    @Override public InteractionState handleMouseReleased(MouseEvent event, Pane canvas) { return this; }
 }
