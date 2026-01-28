@@ -5,32 +5,45 @@ import graph.core.state.StateContext;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 
 public class MoveState implements EditorState {
     private final Node nodeToMove;
-    private double lastMouseX;
-    private double lastMouseY;
     private final EditorState originState;
+    private final double gridSize = 40.0; // Pixel-Abstand des Grids
 
-    public MoveState(Node node, double startX, double startY, EditorState originState) {
+    // Offsets, damit das Shape nicht mit der Mitte zum Mauszeiger springt
+    private double mouseOffsetX;
+    private double mouseOffsetY;
+
+    public MoveState(Node node, double startWorldX, double startWorldY, EditorState origin) {
         this.nodeToMove = node;
-        this.lastMouseX = startX;
-        this.lastMouseY = startY;
-        this.originState = originState;
+        this.originState = origin;
+
+        // Wir berechnen den Abstand zwischen Maus und der Mitte des Shapes
+        Point2D center = getCenter(node);
+        this.mouseOffsetX = startWorldX - center.getX();
+        this.mouseOffsetY = startWorldY - center.getY();
     }
 
     @Override
     public void handleMouseDragged(MouseEvent event, StateContext context) {
-        Point2D mouseInWorld = context.getMouseInWorld(event);
+        Point2D worldMouse = context.getMouseInWorld(event);
 
-        double deltaX = mouseInWorld.getX() - lastMouseX;
-        double deltaY = mouseInWorld.getY() - lastMouseY;
+        // Die gewünschte neue Mitte (Mausposition minus ursprünglicher Offset)
+        double targetCenterX = worldMouse.getX() - mouseOffsetX;
+        double targetCenterY = worldMouse.getY() - mouseOffsetY;
 
-        nodeToMove.setTranslateX(nodeToMove.getTranslateX() + deltaX);
-        nodeToMove.setTranslateY(nodeToMove.getTranslateY() + deltaY);
+        // SNAP-LOGIK: Wir runden die Ziel-Mitte auf das nächste Grid
+        double snappedCenterX = Math.round(targetCenterX / gridSize) * gridSize;
+        double snappedCenterY = Math.round(targetCenterY / gridSize) * gridSize;
 
-        lastMouseX = mouseInWorld.getX();
-        lastMouseY = mouseInWorld.getY();
+        // Wie viel müssen wir das Objekt verschieben, um diese Mitte zu erreichen?
+        Point2D currentInitialCenter = getInitialCenter(nodeToMove);
+
+        nodeToMove.setTranslateX(snappedCenterX - currentInitialCenter.getX());
+        nodeToMove.setTranslateY(snappedCenterY - currentInitialCenter.getY());
     }
 
     @Override
@@ -38,6 +51,21 @@ public class MoveState implements EditorState {
         context.setCurrentState(originState);
     }
 
-    @Override
-    public void handleMousePressed(MouseEvent event, StateContext context) {}
+    // Hilfsmethode: Wo liegt die Mitte des Objekts aktuell in der Welt?
+    private Point2D getCenter(Node node) {
+        Point2D initial = getInitialCenter(node);
+        return new Point2D(initial.getX() + node.getTranslateX(), initial.getY() + node.getTranslateY());
+    }
+
+    // Hilfsmethode: Wo ist die "statische" Mitte (ohne Translate)?
+    private Point2D getInitialCenter(Node node) {
+        if (node instanceof Circle c) {
+            return new Point2D(c.getCenterX(), c.getCenterY());
+        } else if (node instanceof Rectangle r) {
+            return new Point2D(r.getX() + r.getWidth() / 2, r.getY() + r.getHeight() / 2);
+        }
+        return new Point2D(0, 0);
+    }
+
+    @Override public void handleMousePressed(MouseEvent event, StateContext context) {}
 }
