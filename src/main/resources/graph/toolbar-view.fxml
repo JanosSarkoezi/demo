@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="graph.controller.ToolbarController" spacing="10" style="-fx-background-color: #eee; -fx-padding: 10;">
+    <Button text="Kreis" onAction="#onCircleClick" />
+    <Button text="Rechteck" onAction="#onRectClick" />
+    <Button text="Verbindung" onAction="#onConnClick" />
+</VBox>
