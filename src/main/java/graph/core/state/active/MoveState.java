@@ -21,7 +21,7 @@ public class MoveState implements EditorState {
 
     @Override
     public void handleMouseDragged(MouseEvent event, StateContext context) {
-        Point2D mouseInWorld = context.getDrawingPane().getMouseInWorld(event);
+        Point2D mouseInWorld = context.getMouseInWorld(event);
 
         double deltaX = mouseInWorld.getX() - lastMouseX;
         double deltaY = mouseInWorld.getY() - lastMouseY;

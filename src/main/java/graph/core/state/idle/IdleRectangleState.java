@@ -19,7 +19,7 @@ public class IdleRectangleState implements EditorState {
             return;
         }
 
-        Point2D mouseInWorld = context.getDrawingPane().getMouseInWorld(event);
+        Point2D mouseInWorld = context.getMouseInWorld(event);
 
         if (event.getTarget() instanceof Shape rect) {
             context.setCurrentState(new MoveState(rect, mouseInWorld.getX(), mouseInWorld.getY(), this));

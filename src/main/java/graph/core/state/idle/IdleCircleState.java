@@ -19,7 +19,7 @@ public class IdleCircleState implements EditorState {
             return;
         }
 
-        Point2D mouseInWorld = context.getDrawingPane().getMouseInWorld(event);
+        Point2D mouseInWorld = context.getMouseInWorld(event);
 
         if (event.getTarget() instanceof Shape c) {
             context.setCurrentState(new MoveState(c, mouseInWorld.getX(), mouseInWorld.getY(), this));
