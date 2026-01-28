@@ -15,21 +15,45 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
 public class CanvasController implements StateContext {
-    @FXML private GraphView drawingPane;
+    @FXML
+    private GraphView drawingPane;
     private EditorState currentState = new IdleCircleState();
     private DrawingModel model;
 
-    @Override public GraphView getDrawingPane() { return drawingPane; }
+    @Override
+    public GraphView getDrawingPane() {
+        return drawingPane;
+    }
 
-    @Override public void setCurrentState(EditorState state) { this.currentState = state; }
+    @Override
+    public void setCurrentState(EditorState state) {
+        this.currentState = state;
+    }
 
-    @FXML void onMousePressed(MouseEvent e) { currentState.handleMousePressed(e, this); }
-    @FXML void onMouseDragged(MouseEvent e) { currentState.handleMouseDragged(e, this); }
-    @FXML void onMouseReleased(MouseEvent e) { currentState.handleMouseReleased(e, this); }
-    @FXML void handleScroll(ScrollEvent event) {
+    @FXML
+    void onMousePressed(MouseEvent event) {
+        currentState.handleMousePressed(event, this);
+        event.consume();
+    }
+
+    @FXML
+    void onMouseDragged(MouseEvent event) {
+        currentState.handleMouseDragged(event, this);
+        event.consume();
+    }
+
+    @FXML
+    void onMouseReleased(MouseEvent event) {
+        currentState.handleMouseReleased(event, this);
+        event.consume();
+    }
+
+    @FXML
+    void handleScroll(ScrollEvent event) {
         if (drawingPane instanceof GraphView graphView) {
             graphView.handleZoom(event);
         }
+        event.consume();
     }
 
     public void setModel(DrawingModel model) {

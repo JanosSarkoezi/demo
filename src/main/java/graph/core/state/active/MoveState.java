@@ -2,7 +2,6 @@ package graph.core.state.active;
 
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
-import graph.core.state.idle.IdleCircleState;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
