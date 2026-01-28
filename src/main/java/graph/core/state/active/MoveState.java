@@ -26,8 +26,8 @@ public class MoveState implements EditorState {
         double deltaX = mouseInWorld.getX() - lastMouseX;
         double deltaY = mouseInWorld.getY() - lastMouseY;
 
-        nodeToMove.setLayoutX(nodeToMove.getLayoutX() + deltaX);
-        nodeToMove.setLayoutY(nodeToMove.getLayoutY() + deltaY);
+        nodeToMove.setTranslateX(nodeToMove.getTranslateX() + deltaX);
+        nodeToMove.setTranslateY(nodeToMove.getTranslateY() + deltaY);
 
         lastMouseX = mouseInWorld.getX();
         lastMouseY = mouseInWorld.getY();

@@ -3,6 +3,7 @@ package graph.controller;
 import graph.core.ToolType;
 import graph.core.state.EditorState;
 import graph.core.state.idle.IdleCircleState;
+import graph.core.state.idle.IdleConnectionState;
 import graph.core.state.idle.IdleRectangleState;
 import graph.model.DrawingModel;
 import javafx.fxml.FXML;
@@ -23,7 +24,7 @@ public class MainController {
         EditorState newState = switch (tool) {
             case CIRCLE     -> new IdleCircleState();
             case RECTANGLE  -> new IdleRectangleState();
-            case CONNECTION -> new IdleCircleState(); // Hier später IdleConnectionState
+            case CONNECTION -> new IdleConnectionState();
         };
 
         canvasController.setCurrentState(newState);

@@ -1,5 +1,6 @@
 package graph.controller;
 
+import graph.core.selection.SelectionManager;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.idle.IdleCircleState;
@@ -15,6 +16,8 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
 public class CanvasController implements StateContext {
+    private final SelectionManager selectionManager = new SelectionManager();
+
     @FXML
     private GraphView drawingPane;
     private EditorState currentState = new IdleCircleState();
@@ -113,5 +116,10 @@ public class CanvasController implements StateContext {
     @Override
     public void addShapeToModel(Node shape) {
         model.addShape(shape);
+    }
+
+    @Override
+    public SelectionManager getSelectionManager() {
+        return selectionManager;
     }
 }
