@@ -1,5 +1,6 @@
 package graph.controller;
 
+import graph.core.selection.SelectionManager;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.idle.IdleCircleState;
@@ -15,21 +16,49 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
 public class CanvasController implements StateContext {
-    @FXML private GraphView drawingPane;
+    private final SelectionManager selectionManager = new SelectionManager();
+
+    @FXML
+    private GraphView drawingPane;
     private EditorState currentState = new IdleCircleState();
     private DrawingModel model;
+    private boolean snapEnabled = true; // Standardmäßig an
+    public void setSnapEnabled(boolean enabled) { this.snapEnabled = enabled; }
 
-    @Override public GraphView getDrawingPane() { return drawingPane; }
+    @Override
+    public GraphView getDrawingPane() {
+        return drawingPane;
+    }
 
-    @Override public void setCurrentState(EditorState state) { this.currentState = state; }
+    @Override
+    public void setCurrentState(EditorState state) {
+        this.currentState = state;
+    }
 
-    @FXML void onMousePressed(MouseEvent e) { currentState.handleMousePressed(e, this); }
-    @FXML void onMouseDragged(MouseEvent e) { currentState.handleMouseDragged(e, this); }
-    @FXML void onMouseReleased(MouseEvent e) { currentState.handleMouseReleased(e, this); }
-    @FXML void handleScroll(ScrollEvent event) {
+    @FXML
+    void onMousePressed(MouseEvent event) {
+        currentState.handleMousePressed(event, this);
+        event.consume();
+    }
+
+    @FXML
+    void onMouseDragged(MouseEvent event) {
+        currentState.handleMouseDragged(event, this);
+        event.consume();
+    }
+
+    @FXML
+    void onMouseReleased(MouseEvent event) {
+        currentState.handleMouseReleased(event, this);
+        event.consume();
+    }
+
+    @FXML
+    void handleScroll(ScrollEvent event) {
         if (drawingPane instanceof GraphView graphView) {
             graphView.handleZoom(event);
         }
+        event.consume();
     }
 
     public void setModel(DrawingModel model) {
@@ -89,5 +118,15 @@ public class CanvasController implements StateContext {
     @Override
     public void addShapeToModel(Node shape) {
         model.addShape(shape);
+    }
+
+    @Override
+    public SelectionManager getSelectionManager() {
+        return selectionManager;
+    }
+
+    @Override
+    public boolean isSnapToGridEnabled() {
+        return snapEnabled;
     }
 }

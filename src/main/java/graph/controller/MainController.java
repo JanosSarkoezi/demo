@@ -3,6 +3,7 @@ package graph.controller;
 import graph.core.ToolType;
 import graph.core.state.EditorState;
 import graph.core.state.idle.IdleCircleState;
+import graph.core.state.idle.IdleConnectionState;
 import graph.core.state.idle.IdleRectangleState;
 import graph.model.DrawingModel;
 import javafx.fxml.FXML;
@@ -17,13 +18,14 @@ public class MainController {
     public void initialize() {
         canvasController.setModel(drawingModel);
         toolbarController.setOnToolSelected(this::handleToolSelection);
+        toolbarController.setOnSnapChanged(enabled -> canvasController.setSnapEnabled(enabled));
     }
 
     private void handleToolSelection(ToolType tool) {
         EditorState newState = switch (tool) {
             case CIRCLE     -> new IdleCircleState();
             case RECTANGLE  -> new IdleRectangleState();
-            case CONNECTION -> new IdleCircleState(); // Hier später IdleConnectionState
+            case CONNECTION -> new IdleConnectionState();
         };
 
         canvasController.setCurrentState(newState);
