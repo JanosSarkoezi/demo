@@ -18,6 +18,7 @@ public class MainController {
     public void initialize() {
         canvasController.setModel(drawingModel);
         toolbarController.setOnToolSelected(this::handleToolSelection);
+        toolbarController.setOnSnapChanged(enabled -> canvasController.setSnapEnabled(enabled));
     }
 
     private void handleToolSelection(ToolType tool) {

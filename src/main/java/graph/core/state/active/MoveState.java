@@ -31,19 +31,24 @@ public class MoveState implements EditorState {
     public void handleMouseDragged(MouseEvent event, StateContext context) {
         Point2D worldMouse = context.getMouseInWorld(event);
 
-        // Die gewünschte neue Mitte (Mausposition minus ursprünglicher Offset)
         double targetCenterX = worldMouse.getX() - mouseOffsetX;
         double targetCenterY = worldMouse.getY() - mouseOffsetY;
 
-        // SNAP-LOGIK: Wir runden die Ziel-Mitte auf das nächste Grid
-        double snappedCenterX = Math.round(targetCenterX / gridSize) * gridSize;
-        double snappedCenterY = Math.round(targetCenterY / gridSize) * gridSize;
+        double finalX, finalY;
 
-        // Wie viel müssen wir das Objekt verschieben, um diese Mitte zu erreichen?
-        Point2D currentInitialCenter = getInitialCenter(nodeToMove);
+        if (context.isSnapToGridEnabled()) {
+            // SNAP-LOGIK
+            finalX = Math.round(targetCenterX / gridSize) * gridSize;
+            finalY = Math.round(targetCenterY / gridSize) * gridSize;
+        } else {
+            // FLÜSSIGE BEWEGUNG
+            finalX = targetCenterX;
+            finalY = targetCenterY;
+        }
 
-        nodeToMove.setTranslateX(snappedCenterX - currentInitialCenter.getX());
-        nodeToMove.setTranslateY(snappedCenterY - currentInitialCenter.getY());
+        Point2D initial = getInitialCenter(nodeToMove);
+        nodeToMove.setTranslateX(finalX - initial.getX());
+        nodeToMove.setTranslateY(finalY - initial.getY());
     }
 
     @Override

@@ -22,6 +22,8 @@ public class CanvasController implements StateContext {
     private GraphView drawingPane;
     private EditorState currentState = new IdleCircleState();
     private DrawingModel model;
+    private boolean snapEnabled = true; // Standardmäßig an
+    public void setSnapEnabled(boolean enabled) { this.snapEnabled = enabled; }
 
     @Override
     public GraphView getDrawingPane() {
@@ -121,5 +123,10 @@ public class CanvasController implements StateContext {
     @Override
     public SelectionManager getSelectionManager() {
         return selectionManager;
+    }
+
+    @Override
+    public boolean isSnapToGridEnabled() {
+        return snapEnabled;
     }
 }
