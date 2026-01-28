@@ -3,6 +3,7 @@ package graph.core.state.idle;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.active.MoveState;
+import javafx.geometry.Point2D;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -12,10 +13,12 @@ public class IdleCircleState implements EditorState {
 
     @Override
     public void handleMousePressed(MouseEvent event, StateContext context) {
+        Point2D mouseInWorld = context.getDrawingPane().getMouseInWorld(event);
+
         if (event.getTarget() instanceof Shape c) {
-            context.setCurrentState(new MoveState(c, event.getX(), event.getY()));
+            context.setCurrentState(new MoveState(c, mouseInWorld.getX(), mouseInWorld.getY(), this));
         } else {
-            Circle circle = new Circle(event.getX(), event.getY(), 30, Color.DODGERBLUE);
+            Circle circle = new Circle(mouseInWorld.getX(), mouseInWorld.getY(), 30, Color.DODGERBLUE);
             context.addShapeToModel(circle);
         }
     }

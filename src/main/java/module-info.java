@@ -8,10 +8,12 @@ module graph {
 
     // Erlaube dem FXML-Loader den Zugriff auf die Main-Klasse, falls dort FXML geladen wird
     opens graph to javafx.graphics, javafx.fxml;
+    opens graph.view to javafx.fxml;
 
     // Exportiere Pakete, falls andere Module darauf zugreifen müssten (optional für dieses Projekt)
     exports graph;
     exports graph.controller;
     exports graph.core;
     exports graph.core.state;
+    exports graph.view;
 }

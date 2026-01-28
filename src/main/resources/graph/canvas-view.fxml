@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.layout.*?>
+<?import graph.view.GraphView?>
 
-<Pane xmlns:fx="http://javafx.com/fxml" fx:controller="graph.controller.CanvasController"
-      fx:id="drawingPane" onMousePressed="#onMousePressed" onMouseDragged="#onMouseDragged"
-      onMouseReleased="#onMouseReleased" HBox.hgrow="ALWAYS" style="-fx-background-color: white;" />
+<GraphView fx:id="drawingPane" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="graph.controller.CanvasController"
+      onMousePressed="#onMousePressed"
+      onMouseDragged="#onMouseDragged"
+      onMouseReleased="#onMouseReleased"
+      onScroll="#handleScroll" />
