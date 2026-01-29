@@ -2,6 +2,7 @@ package graph.view;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
@@ -88,6 +89,25 @@ public class GraphView extends Pane {
         world.setTranslateY(world.getTranslateY() + deltaY * newScale);
 
         event.consume();
+    }
+
+    public void addNode(Node node) {
+        if (node instanceof javafx.scene.shape.Circle || node instanceof javafx.scene.shape.Rectangle) {
+            shapeLayer.getChildren().add(node);
+        } else if (node instanceof javafx.scene.shape.Polyline || node instanceof javafx.scene.shape.Line) {
+            connectionLayer.getChildren().add(node);
+        } else if (node instanceof javafx.scene.text.Text) {
+            textLayer.getChildren().add(node);
+        } else {
+            shapeLayer.getChildren().add(node);
+        }
+    }
+
+    public void removeNode(Node node) {
+        shapeLayer.getChildren().remove(node);
+        connectionLayer.getChildren().remove(node);
+        textLayer.getChildren().remove(node);
+        uiLayer.getChildren().remove(node);
     }
 
     // Getter für die Layer (für Renderer und Controller)

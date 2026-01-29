@@ -3,8 +3,10 @@ package graph.core.state.idle;
 import graph.core.selection.SelectionManager;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
+import graph.core.state.active.ConnectionState;
 import graph.core.util.Port;
 import graph.core.util.PortCalculator;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -18,20 +20,26 @@ public class IdleConnectionState implements EditorState {
     @Override
     public void handleMousePressed(MouseEvent event, StateContext context) {
         SelectionManager sm = context.getSelectionManager();
+        Point2D mouseInWorld = context.getMouseInWorld(event);
+        Node target = (Node) event.getTarget();
 
-        if (event.getTarget() instanceof Shape clickedShape && !(clickedShape instanceof Circle port && isPort(port))) {
-            // 1. Toggle die Auswahl im Manager (macht auch den goldenen Effekt)
+        // FALL: Klick auf einen Port -> Verbindung starten
+        if (target instanceof Circle portCircle && isPort(portCircle)) {
+            // Wir starten den neuen State und übergeben den angeklickten Port
+            context.setCurrentState(new ConnectionState(portCircle, mouseInWorld));
+            return;
+        }
+
+        // FALL: Klick auf ein Shape (aber kein Port) -> Selektion togglen
+        if (target instanceof Shape clickedShape) {
             sm.toggleSelection(clickedShape);
-
-            // 2. Ports basierend auf der neuen Auswahl aktualisieren
             refreshPorts(context);
         }
-        else if (event.getTarget() == context.getDrawingPane()) {
-            // Klick ins Leere -> Auswahl leeren
+        // FALL: Klick ins Leere -> Alles deselektieren
+        else if (target == context.getDrawingPane()) {
             sm.clearSelection();
             refreshPorts(context);
         }
-        // Falls auf einen Port geklickt wurde, würde hier später der ConnectionState starten
     }
 
     /**

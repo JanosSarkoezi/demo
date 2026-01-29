@@ -1,0 +1,15 @@
+Wenn das hilft die folgende Idee umzusetzen:
+
+1. Port wird angeklickt und losgelassen. Sozusagen ausgewaehlt als der
+   Startpunkt des Polygons. Sie soll natuerlich sich mitbewegen, auch dann wenn
+   die Ports nicht zu sehen sind.
+2. Bewegen wir die Maus, dann erscheint ein gumibandartige Linie. der Anfang
+   der Linie ist der gelbe Punkt (Port).
+3. Wenn wir kein Shape anklicken, dann ensteht der genatte gelber Punkt, der
+   als neuer Startpung des Polygons dient.
+4. Diesen Vorgang koenne wir beliebig of vornehmen, bis wir ein anderen Port
+   anklicken. Der Klick auf den Port beendet den Polygonzug.
+5. Der Polygon wird mit den grossen gelben Zwischenpunkten fest dargestellt.
+6. Wichtig dabei ist, dass die gelben Zwischenpunkte bewegbar sind. Genau wie
+   die anderen Shapes. Damit haben wir die Moeglichkeit das Polygon beliebig zu
+   formen

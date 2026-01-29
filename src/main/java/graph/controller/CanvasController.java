@@ -11,9 +11,6 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
 
 public class CanvasController implements StateContext {
     private final SelectionManager selectionManager = new SelectionManager();
@@ -67,52 +64,14 @@ public class CanvasController implements StateContext {
         // Der Listener reagiert auf JEDE Änderung in der Liste des Models
         model.getShapes().addListener((ListChangeListener<Node>) change -> {
             while (change.next()) {
-                // FALL 1: Neue Objekte wurden dem Model hinzugefügt
                 if (change.wasAdded()) {
-                    for (Node node : change.getAddedSubList()) {
-                        addNodeToAppropriateLayer(node);
-                    }
+                    change.getAddedSubList().forEach(drawingPane::addNode);
                 }
-
-                // FALL 2: Objekte wurden aus dem Model entfernt
                 if (change.wasRemoved()) {
-                    for (Node node : change.getRemoved()) {
-                        removeNodeFromLayers(node);
-                    }
+                    change.getRemoved().forEach(drawingPane::removeNode);
                 }
             }
         });
-    }
-
-    /**
-     * Hilfsmethode, um zu entscheiden, welcher Layer ein Objekt aufnehmen soll.
-     */
-    private void addNodeToAppropriateLayer(Node node) {
-        if (drawingPane instanceof GraphView gv) {
-            // Logik zur Einsortierung:
-            if (node instanceof Circle || node instanceof Rectangle) {
-                gv.getShapeLayer().getChildren().add(node);
-            } else if (node instanceof Line || node instanceof javafx.scene.shape.Polyline) {
-                gv.getConnectionLayer().getChildren().add(node);
-            } else if (node instanceof javafx.scene.text.Text) {
-                gv.getTextLayer().getChildren().add(node);
-            } else {
-                // Standardmäßig in den Shape-Layer, falls unbekannt
-                gv.getShapeLayer().getChildren().add(node);
-            }
-        }
-    }
-
-    /**
-     * Hilfsmethode zum sauberen Entfernen aus allen Layern.
-     */
-    private void removeNodeFromLayers(Node node) {
-        if (drawingPane instanceof GraphView gv) {
-            gv.getShapeLayer().getChildren().remove(node);
-            gv.getConnectionLayer().getChildren().remove(node);
-            gv.getTextLayer().getChildren().remove(node);
-            gv.getUiLayer().getChildren().remove(node);
-        }
     }
 
     @Override
