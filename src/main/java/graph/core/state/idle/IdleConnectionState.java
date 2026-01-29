@@ -4,6 +4,7 @@ import graph.core.selection.SelectionManager;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.active.ConnectionState;
+import graph.core.state.active.MoveState;
 import graph.core.util.Port;
 import graph.core.util.PortCalculator;
 import javafx.geometry.Point2D;
@@ -23,19 +24,26 @@ public class IdleConnectionState implements EditorState {
         Point2D mouseInWorld = context.getMouseInWorld(event);
         Node target = (Node) event.getTarget();
 
-        // FALL: Klick auf einen Port -> Verbindung starten
+        // 1. FALL: Klick auf einen Port -> Verbindung (Polygon) starten
         if (target instanceof Circle portCircle && isPort(portCircle)) {
-            // Wir starten den neuen State und übergeben den angeklickten Port
+            // Wir wechseln in den CreateConnectionState und übergeben den Port
             context.setCurrentState(new ConnectionState(portCircle, mouseInWorld));
             return;
         }
 
-        // FALL: Klick auf ein Shape (aber kein Port) -> Selektion togglen
+        // 2. FALL: Klick auf einen Waypoint (gelber Knickpunkt eines existierenden Polygons)
+        if (target instanceof Circle waypoint && isWaypoint(waypoint)) {
+            // Ermöglicht das Verschieben der Knickpunkte
+            context.setCurrentState(new MoveState(waypoint, mouseInWorld.getX(), mouseInWorld.getY(), this));
+            return;
+        }
+
+        // 3. FALL: Klick auf ein normales Shape (Rechteck/Blauer Kreis)
         if (target instanceof Shape clickedShape) {
             sm.toggleSelection(clickedShape);
             refreshPorts(context);
         }
-        // FALL: Klick ins Leere -> Alles deselektieren
+        // 4. FALL: Klick ins Leere -> Alles deselektieren
         else if (target == context.getDrawingPane()) {
             sm.clearSelection();
             refreshPorts(context);
@@ -43,37 +51,46 @@ public class IdleConnectionState implements EditorState {
     }
 
     /**
-     * Leert den UI-Layer und zeichnet die Ports für alle aktuell selektierten Shapes neu.
-     * Die Ports werden per Binding an das Shape geklebt.
+     * Erzeugt die gelben Ports an den Rändern der selektierten Shapes.
      */
     private void refreshPorts(StateContext context) {
-        // 1. UI-Layer leeren
+        // UI-Layer leeren
         context.getDrawingPane().getUiLayer().getChildren().clear();
 
         for (Node selectedNode : context.getSelectionManager().getSelectedNodes()) {
             List<Port> ports = PortCalculator.getPortsForNode(selectedNode);
 
             for (Port p : ports) {
-                Circle portCircle = new Circle(5, Color.YELLOW);
-                portCircle.setStroke(Color.ORANGE);
+                // Port-Kreis erstellen
+                Circle portCircle = new Circle(6, Color.YELLOW);
+                portCircle.setStroke(Color.GOLDENROD);
                 portCircle.setStrokeWidth(1.5);
 
+                // WICHTIG: Positionierung relativ zum Shape (ohne Translate)
+                // Wir nutzen centerX/Y für die Position am Rand
                 portCircle.setCenterX(p.position().getX() - selectedNode.getTranslateX());
                 portCircle.setCenterY(p.position().getY() - selectedNode.getTranslateY());
 
+                // Binding: Der Port reitet auf dem Translate des Shapes mit
                 portCircle.translateXProperty().bind(selectedNode.translateXProperty());
                 portCircle.translateYProperty().bind(selectedNode.translateYProperty());
 
+                // Metadaten setzen
                 portCircle.getProperties().put("is_port", true);
                 portCircle.getProperties().put("port_data", p);
 
-                context.getDrawingPane().getUiLayer().getChildren().add(portCircle);
+                // Über die neue addNode Methode der GraphView hinzufügen
+                context.getDrawingPane().addNode(portCircle);
             }
         }
     }
 
     private boolean isPort(Node node) {
         return Boolean.TRUE.equals(node.getProperties().get("is_port"));
+    }
+
+    private boolean isWaypoint(Node node) {
+        return Boolean.TRUE.equals(node.getProperties().get("is_waypoint"));
     }
 
     @Override public void handleMouseDragged(MouseEvent event, StateContext context) {}
