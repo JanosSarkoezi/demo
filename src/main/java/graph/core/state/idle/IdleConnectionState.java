@@ -24,65 +24,61 @@ public class IdleConnectionState implements EditorState {
         Point2D mouseInWorld = context.getMouseInWorld(event);
         Node target = (Node) event.getTarget();
 
-        // 1. FALL: Klick auf einen Port -> Verbindung (Polygon) starten
+        // 1. Priorität: Klick auf einen gelben Port -> Neue Verbindung starten
         if (target instanceof Circle portCircle && isPort(portCircle)) {
-            // Wir wechseln in den CreateConnectionState und übergeben den Port
             context.setCurrentState(new ConnectionState(portCircle, mouseInWorld));
             return;
         }
 
-        // 2. FALL: Klick auf einen Waypoint (gelber Knickpunkt eines existierenden Polygons)
+        // 2. Priorität: Klick auf einen Waypoint -> Bestehende Verbindung verformen
         if (target instanceof Circle waypoint && isWaypoint(waypoint)) {
-            // Ermöglicht das Verschieben der Knickpunkte
             context.setCurrentState(new MoveState(waypoint, mouseInWorld.getX(), mouseInWorld.getY(), this));
             return;
         }
 
-        // 3. FALL: Klick auf ein normales Shape (Rechteck/Blauer Kreis)
+        // 3. Priorität: Klick auf ein Shape -> Selektion togglen und Ports aktualisieren
         if (target instanceof Shape clickedShape) {
+            // Der SelectionManager kümmert sich um das Hinzufügen/Entfernen
             sm.toggleSelection(clickedShape);
+            // Danach zeichnen wir die Ports für alle aktuell selektierten Objekte neu
             refreshPorts(context);
         }
-        // 4. FALL: Klick ins Leere -> Alles deselektieren
+        // 4. Priorität: Klick ins Leere -> Alles abwählen
         else if (target == context.getDrawingPane()) {
             sm.clearSelection();
             refreshPorts(context);
         }
     }
 
-    /**
-     * Erzeugt die gelben Ports an den Rändern der selektierten Shapes.
-     */
     private void refreshPorts(StateContext context) {
-        // UI-Layer leeren
         context.getDrawingPane().getUiLayer().getChildren().clear();
 
         for (Node selectedNode : context.getSelectionManager().getSelectedNodes()) {
+
             List<Port> ports = PortCalculator.getPortsForNode(selectedNode);
-
             for (Port p : ports) {
-                // Port-Kreis erstellen
-                Circle portCircle = new Circle(6, Color.YELLOW);
-                portCircle.setStroke(Color.GOLDENROD);
-                portCircle.setStrokeWidth(1.5);
-
-                // WICHTIG: Positionierung relativ zum Shape (ohne Translate)
-                // Wir nutzen centerX/Y für die Position am Rand
-                portCircle.setCenterX(p.position().getX() - selectedNode.getTranslateX());
-                portCircle.setCenterY(p.position().getY() - selectedNode.getTranslateY());
-
-                // Binding: Der Port reitet auf dem Translate des Shapes mit
-                portCircle.translateXProperty().bind(selectedNode.translateXProperty());
-                portCircle.translateYProperty().bind(selectedNode.translateYProperty());
-
-                // Metadaten setzen
-                portCircle.getProperties().put("is_port", true);
-                portCircle.getProperties().put("port_data", p);
-
-                // Über die neue addNode Methode der GraphView hinzufügen
+                Circle portCircle = createPortCircle(p, selectedNode);
                 context.getDrawingPane().addNode(portCircle);
             }
         }
+    }
+
+    private Circle createPortCircle(Port p, Node selectedNode) {
+        // 1. Optik: Ein kleiner gelber Kreis
+        Circle portCircle = new Circle(6, Color.YELLOW);
+        portCircle.setStroke(Color.GOLDENROD);
+        portCircle.setStrokeWidth(1.5);
+
+        portCircle.setCenterX(p.position().getX() - selectedNode.getTranslateX());
+        portCircle.setCenterY(p.position().getY() - selectedNode.getTranslateY());
+
+        portCircle.translateXProperty().bind(selectedNode.translateXProperty());
+        portCircle.translateYProperty().bind(selectedNode.translateYProperty());
+
+        portCircle.getProperties().put("is_port", true);
+        portCircle.getProperties().put("port_data", p);
+
+        return portCircle;
     }
 
     private boolean isPort(Node node) {
