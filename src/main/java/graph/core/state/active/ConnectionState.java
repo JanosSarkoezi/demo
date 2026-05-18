@@ -3,12 +3,14 @@ package graph.core.state.active;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.idle.IdleConnectionState;
+import graph.core.util.Port;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polyline;
+import javafx.scene.shape.Rectangle;
 import javafx.collections.ObservableList;
 import java.util.UUID;
 
@@ -152,17 +154,31 @@ public class ConnectionState implements EditorState {
         UUID sourceId = (UUID) startPort.getProperties().get("fmc_id");
         UUID targetId = (UUID) endPort.getProperties().get("fmc_id");
 
+        // Port-Offsets extrahieren
+        Port sPortData = (Port) startPort.getProperties().get("port_data");
+        Port tPortData = (Port) endPort.getProperties().get("port_data");
+
+        // Wir berechnen die Offsets relativ zur TRANSLATION des Owners (die Translation entspricht der Modell-Position)
+        double soX = sPortData.position().getX() - sPortData.owner().getTranslateX();
+        double soY = sPortData.position().getY() - sPortData.owner().getTranslateY();
+        double toX = tPortData.position().getX() - tPortData.owner().getTranslateX();
+        double toY = tPortData.position().getY() - tPortData.owner().getTranslateY();
+
         try {
             // Neues Verbindungs-Modell erstellen und registrieren
-            graph.core.model.Connection conn = new graph.core.model.Connection(sourceId, targetId);
-            // TODO: Wegpunkte aus der polyline in das Modell übertragen
+            graph.core.model.Connection conn = new graph.core.model.Connection(sourceId, soX, soY, targetId, toX, toY);
+
+            // Wegpunkte übertragen
+            ObservableList<Double> pts = polyline.getPoints();
+            for (int i = 2; i < pts.size() - 2; i++) {
+                conn.getWaypoints().add(pts.get(i));
+            }
+
             context.getRegistry().addConnection(conn);
         } catch (IllegalArgumentException e) {
-            // Falls Bipartit-Regel verletzt wurde
             System.err.println("Verbindung abgelehnt: " + e.getMessage());
         }
 
-        // Die temporäre Polyline aus der View entfernen (der ViewMapper erstellt die echte)
         context.getDrawingPane().removeNode(polyline);
         context.setCurrentState(new IdleConnectionState());
     }

@@ -6,6 +6,7 @@ import graph.core.model.FmcObject;
 import graph.core.model.FmcType;
 import graph.view.GraphView;
 import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -56,19 +57,16 @@ public class ViewMapper {
             Circle circle = new Circle(30, Color.LIGHTBLUE);
             circle.setStroke(Color.STEELBLUE);
             circle.setStrokeWidth(2);
-            // Zentrierung: Der Kreis wird über translateX/Y bewegt
-            circle.centerXProperty().set(0);
-            circle.centerYProperty().set(0);
+            circle.setCenterX(0);
+            circle.setCenterY(0);
             shape = circle;
         } else {
-            Rectangle rect = new Rectangle(80, 60, Color.LIGHTCORAL);
+            Rectangle rect = new Rectangle(-40, -30, 80, 60);
+            rect.setFill(Color.LIGHTCORAL);
             rect.setStroke(Color.DARKRED);
             rect.setStrokeWidth(2);
             rect.setArcWidth(10);
             rect.setArcHeight(10);
-            // Zentrierung: Das Rechteck soll um seinen Mittelpunkt positioniert werden
-            rect.xProperty().bind(rect.widthProperty().divide(-2));
-            rect.yProperty().bind(rect.heightProperty().divide(-2));
             shape = rect;
         }
 
@@ -93,14 +91,26 @@ public class ViewMapper {
         FmcObject target = registry.getObjects().get(conn.getTargetId());
 
         if (source != null && target != null) {
-            // Initialisierung der Punkte
-            polyline.getPoints().addAll(source.getX(), source.getY(), target.getX(), target.getY());
+            ObservableList<Double> points = polyline.getPoints();
+            
+            // Startpunkt
+            points.addAll(source.getX() + conn.getSourceOffsetX(), source.getY() + conn.getSourceOffsetY());
+            
+            // Wegpunkte
+            points.addAll(conn.getWaypoints());
+            
+            // Endpunkt
+            points.addAll(target.getX() + conn.getTargetOffsetX(), target.getY() + conn.getTargetOffsetY());
 
-            // Listener für automatische Updates
-            source.xProperty().addListener((obs, oldVal, newVal) -> polyline.getPoints().set(0, newVal.doubleValue()));
-            source.yProperty().addListener((obs, oldVal, newVal) -> polyline.getPoints().set(1, newVal.doubleValue()));
-            target.xProperty().addListener((obs, oldVal, newVal) -> polyline.getPoints().set(2, newVal.doubleValue()));
-            target.yProperty().addListener((obs, oldVal, newVal) -> polyline.getPoints().set(3, newVal.doubleValue()));
+            // Listener für Startpunkt
+            source.xProperty().addListener((obs, old, newVal) -> points.set(0, newVal.doubleValue() + conn.getSourceOffsetX()));
+            source.yProperty().addListener((obs, old, newVal) -> points.set(1, newVal.doubleValue() + conn.getSourceOffsetY()));
+            
+            // Listener für Endpunkt
+            int lastXIdx = points.size() - 2;
+            int lastYIdx = points.size() - 1;
+            target.xProperty().addListener((obs, old, newVal) -> points.set(lastXIdx, newVal.doubleValue() + conn.getTargetOffsetX()));
+            target.yProperty().addListener((obs, old, newVal) -> points.set(lastYIdx, newVal.doubleValue() + conn.getTargetOffsetY()));
         }
 
         nodeMap.put(conn.getId(), polyline);

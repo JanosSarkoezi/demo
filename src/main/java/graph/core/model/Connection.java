@@ -8,16 +8,28 @@ public class Connection {
     private final UUID id;
     private final UUID sourceId;
     private final UUID targetId;
+    private final double sourceOffsetX;
+    private final double sourceOffsetY;
+    private final double targetOffsetX;
+    private final double targetOffsetY;
     private final ObservableList<Double> waypoints = FXCollections.observableArrayList();
 
-    public Connection(UUID sourceId, UUID targetId) {
+    public Connection(UUID sourceId, double soX, double soY, UUID targetId, double toX, double toY) {
         this.id = UUID.randomUUID();
         this.sourceId = sourceId;
+        this.sourceOffsetX = soX;
+        this.sourceOffsetY = soY;
         this.targetId = targetId;
+        this.targetOffsetX = toX;
+        this.targetOffsetY = toY;
     }
 
     public UUID getId() { return id; }
     public UUID getSourceId() { return sourceId; }
     public UUID getTargetId() { return targetId; }
+    public double getSourceOffsetX() { return sourceOffsetX; }
+    public double getSourceOffsetY() { return sourceOffsetY; }
+    public double getTargetOffsetX() { return targetOffsetX; }
+    public double getTargetOffsetY() { return targetOffsetY; }
     public ObservableList<Double> getWaypoints() { return waypoints; }
 }
