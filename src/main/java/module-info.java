@@ -17,4 +17,6 @@ module graph {
     exports graph.core.state;
     exports graph.view;
     exports graph.core.selection;
+    exports graph.core.model;
+    exports graph.core.view;
 }

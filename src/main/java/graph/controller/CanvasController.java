@@ -1,12 +1,12 @@
 package graph.controller;
 
+import graph.core.model.CoreRegistry;
 import graph.core.selection.SelectionManager;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.idle.IdleCircleState;
-import graph.model.DrawingModel;
+import graph.core.view.ViewMapper;
 import graph.view.GraphView;
-import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
@@ -14,13 +14,21 @@ import javafx.scene.input.ScrollEvent;
 
 public class CanvasController implements StateContext {
     private final SelectionManager selectionManager = new SelectionManager();
+    private final CoreRegistry registry = new CoreRegistry();
+    private ViewMapper viewMapper;
 
     @FXML
     private GraphView drawingPane;
     private EditorState currentState = new IdleCircleState();
-    private DrawingModel model;
+
     private boolean snapEnabled = true; // Standardmäßig an
     public void setSnapEnabled(boolean enabled) { this.snapEnabled = enabled; }
+
+    @FXML
+    public void initialize() {
+        // Der ViewMapper wird erst initialisiert, wenn die drawingPane (FXML) da ist.
+        this.viewMapper = new ViewMapper(registry, drawingPane);
+    }
 
     @Override
     public GraphView getDrawingPane() {
@@ -58,25 +66,11 @@ public class CanvasController implements StateContext {
         event.consume();
     }
 
-    public void setModel(DrawingModel model) {
-        this.model = model;
-
-        // Der Listener reagiert auf JEDE Änderung in der Liste des Models
-        model.getShapes().addListener((ListChangeListener<Node>) change -> {
-            while (change.next()) {
-                if (change.wasAdded()) {
-                    change.getAddedSubList().forEach(drawingPane::addNode);
-                }
-                if (change.wasRemoved()) {
-                    change.getRemoved().forEach(drawingPane::removeNode);
-                }
-            }
-        });
-    }
-
     @Override
     public void addShapeToModel(Node shape) {
-        model.addShape(shape);
+        // Diese Methode wird aus Kompatibilitätsgründen behalten,
+        // sollte aber langfristig durch registry-Aufrufe ersetzt werden.
+        drawingPane.addNode(shape);
     }
 
     @Override
@@ -87,5 +81,10 @@ public class CanvasController implements StateContext {
     @Override
     public boolean isSnapToGridEnabled() {
         return snapEnabled;
+    }
+
+    @Override
+    public CoreRegistry getRegistry() {
+        return registry;
     }
 }

@@ -12,6 +12,7 @@ public interface StateContext {
     void addShapeToModel(Node shape);
     SelectionManager getSelectionManager();
     boolean isSnapToGridEnabled();
+    graph.core.model.CoreRegistry getRegistry();
 
     default Point2D getMouseInWorld(MouseEvent event) {
         return getDrawingPane().getMouseInWorld(event.getSceneX(), event.getSceneY());

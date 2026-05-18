@@ -76,6 +76,7 @@ public class IdleConnectionState implements EditorState {
         portCircle.translateYProperty().bind(selectedNode.translateYProperty());
 
         portCircle.getProperties().put("is_port", true);
+        portCircle.getProperties().put("fmc_id", selectedNode.getProperties().get("fmc_id"));
         portCircle.getProperties().put("port_data", p);
 
         return portCircle;

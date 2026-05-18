@@ -1,13 +1,13 @@
 package graph.core.state.idle;
 
+import graph.core.model.FmcObject;
+import graph.core.model.FmcType;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.active.MoveState;
 import graph.core.state.active.PanningState;
 import javafx.geometry.Point2D;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
 
 public class IdleCircleState implements EditorState {
@@ -24,8 +24,8 @@ public class IdleCircleState implements EditorState {
         if (event.getTarget() instanceof Shape c) {
             context.setCurrentState(new MoveState(c, mouseInWorld.getX(), mouseInWorld.getY(), this));
         } else {
-            Circle circle = new Circle(mouseInWorld.getX(), mouseInWorld.getY(), 30, Color.DODGERBLUE);
-            context.addShapeToModel(circle);
+            FmcObject circle = new FmcObject(FmcType.KREIS, mouseInWorld.getX(), mouseInWorld.getY());
+            context.getRegistry().addObject(circle);
         }
     }
 

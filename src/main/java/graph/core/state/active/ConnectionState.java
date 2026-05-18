@@ -10,6 +10,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polyline;
 import javafx.collections.ObservableList;
+import java.util.UUID;
 
 public class ConnectionState implements EditorState {
     private final Polyline polyline;
@@ -147,10 +148,22 @@ public class ConnectionState implements EditorState {
     }
 
     private void finishConnection(Node endPort, StateContext context) {
-        // Gummiband-Punkt entfernen
-        polyline.getPoints().remove(ghostXIndex, ghostYIndex + 1);
-        // Letzten Punkt an End-Port binden
-        addBoundPoint(endPort);
+        // IDs aus den Ports extrahieren
+        UUID sourceId = (UUID) startPort.getProperties().get("fmc_id");
+        UUID targetId = (UUID) endPort.getProperties().get("fmc_id");
+
+        try {
+            // Neues Verbindungs-Modell erstellen und registrieren
+            graph.core.model.Connection conn = new graph.core.model.Connection(sourceId, targetId);
+            // TODO: Wegpunkte aus der polyline in das Modell übertragen
+            context.getRegistry().addConnection(conn);
+        } catch (IllegalArgumentException e) {
+            // Falls Bipartit-Regel verletzt wurde
+            System.err.println("Verbindung abgelehnt: " + e.getMessage());
+        }
+
+        // Die temporäre Polyline aus der View entfernen (der ViewMapper erstellt die echte)
+        context.getDrawingPane().removeNode(polyline);
         context.setCurrentState(new IdleConnectionState());
     }
 

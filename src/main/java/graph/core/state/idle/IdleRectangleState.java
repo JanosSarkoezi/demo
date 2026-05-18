@@ -1,13 +1,13 @@
 package graph.core.state.idle;
 
+import graph.core.model.FmcObject;
+import graph.core.model.FmcType;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.active.MoveState;
 import graph.core.state.active.PanningState;
 import javafx.geometry.Point2D;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 
 public class IdleRectangleState implements EditorState {
@@ -24,12 +24,8 @@ public class IdleRectangleState implements EditorState {
         if (event.getTarget() instanceof Shape rect) {
             context.setCurrentState(new MoveState(rect, mouseInWorld.getX(), mouseInWorld.getY(), this));
         } else if (event.getTarget() == context.getDrawingPane()) {
-            Rectangle newRect = new Rectangle(mouseInWorld.getX() - 40, mouseInWorld.getY() - 25, 80, 50);
-            newRect.setFill(Color.LIGHTCORAL);
-            newRect.setStroke(Color.BLACK);
-            newRect.setStrokeWidth(2);
-
-            context.addShapeToModel(newRect);
+            FmcObject rectObj = new FmcObject(FmcType.QUADRAT, mouseInWorld.getX(), mouseInWorld.getY());
+            context.getRegistry().addObject(rectObj);
         }
     }
 
