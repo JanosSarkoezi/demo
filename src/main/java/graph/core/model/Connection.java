@@ -12,7 +12,7 @@ public class Connection {
     private final double sourceOffsetY;
     private final double targetOffsetX;
     private final double targetOffsetY;
-    private final ObservableList<Double> waypoints = FXCollections.observableArrayList();
+    private final ObservableList<UUID> waypointIds = FXCollections.observableArrayList();
 
     public Connection(UUID sourceId, double soX, double soY, UUID targetId, double toX, double toY) {
         this.id = UUID.randomUUID();
@@ -31,5 +31,5 @@ public class Connection {
     public double getSourceOffsetY() { return sourceOffsetY; }
     public double getTargetOffsetX() { return targetOffsetX; }
     public double getTargetOffsetY() { return targetOffsetY; }
-    public ObservableList<Double> getWaypoints() { return waypoints; }
+    public ObservableList<UUID> getWaypointIds() { return waypointIds; }
 }

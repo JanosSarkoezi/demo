@@ -1,5 +1,7 @@
 package graph.core.state.active;
 
+import graph.core.model.FmcObject;
+import graph.core.model.FmcType;
 import graph.core.state.EditorState;
 import graph.core.state.StateContext;
 import graph.core.state.idle.IdleConnectionState;
@@ -12,11 +14,14 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polyline;
 import javafx.scene.shape.Rectangle;
 import javafx.collections.ObservableList;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class ConnectionState implements EditorState {
     private final Polyline polyline;
     private final Node startPort;
+    private final List<UUID> waypointIds = new ArrayList<>();
     private int ghostXIndex;
     private int ghostYIndex;
 
@@ -64,16 +69,15 @@ public class ConnectionState implements EditorState {
     }
 
     private void createWaypoint(Point2D pos, StateContext context) {
-        // Gelber Knickpunkt-Kreis
-        Circle waypoint = new Circle(pos.getX(), pos.getY(), 6, Color.YELLOW);
-        waypoint.setStroke(Color.GOLDENROD);
-        waypoint.getProperties().put("is_waypoint", true); // Wichtig für MoveState!
+        // 1. Neues Modell-Objekt für den Wegpunkt erstellen
+        FmcObject waypointObj = new FmcObject(FmcType.WAYPOINT, pos.getX(), pos.getY());
+        context.getRegistry().addObject(waypointObj);
+        
+        // 2. ID merken für die spätere Connection
+        waypointIds.add(waypointObj.getId());
 
-        // In die View (uiLayer) via GraphView
-        context.getDrawingPane().addNode(waypoint);
-
-        // Der aktuelle "Ghost-Punkt" in der Polyline wird jetzt fest an diesen Waypoint gebunden
-        bindPointToNode(ghostXIndex, waypoint);
+        // 3. Für das Gummiband binden wir den Punkt an das Modell-Objekt
+        bindPointToNode(ghostXIndex, waypointObj);
 
         // Neuen Ghost-Punkt für das nächste Segment erstellen
         ObservableList<Double> pts = polyline.getPoints();
@@ -83,97 +87,78 @@ public class ConnectionState implements EditorState {
     }
 
     private void addBoundPoint(Node node) {
-        // 1. Berechne die korrekte Startposition sofort
         Point2D initialPos = getAbsolutePosition(node);
-
-        // 2. Merke dir den Index, wo diese Koordinaten landen werden
         int xIdx = polyline.getPoints().size();
-
-        // 3. Füge die echten Werte hinzu (nicht 0.0)
         polyline.getPoints().addAll(initialPos.getX(), initialPos.getY());
-
-        // 4. Jetzt binde die Listener für zukünftige Bewegungen
         bindPointToNode(xIdx, node);
     }
 
-    // Hilfsmethode für die saubere Positionsbestimmung
-    // Hilfsmethode für die saubere Positionsbestimmung basierend auf Zentren
     private Point2D getAbsolutePosition(Node node) {
         double x, y;
-
         if (node instanceof Circle c) {
-            // Für alle Kreise (Ports & Waypoints): Mitte + Verschiebung
             x = c.getCenterX() + c.getTranslateX();
             y = c.getCenterY() + c.getTranslateY();
         } else {
-            // Fallback für Rechtecke o.ä.
             x = node.getLayoutX() + node.getTranslateX();
             y = node.getLayoutY() + node.getTranslateY();
         }
         return new Point2D(x, y);
     }
 
-    private void bindPointToNode(int xIdx, Node node) {
+    private void bindPointToNode(int xIdx, Object nodeOrObj) {
         int yIdx = xIdx + 1;
 
-        // Diese Logik wird immer aufgerufen, wenn sich der Port oder das Shape bewegt
-        Runnable updatePos = () -> {
-            double worldX, worldY;
-
-            if (node instanceof Circle portCircle) {
-                // Wir nutzen die echten Daten des Kreises:
-                // Center (Position am Rand) + Translate (Bewegung des Vaters)
-                worldX = portCircle.getCenterX() + portCircle.getTranslateX();
-                worldY = portCircle.getCenterY() + portCircle.getTranslateY();
-            } else {
-                worldX = node.getLayoutX() + node.getTranslateX();
-                worldY = node.getLayoutY() + node.getTranslateY();
+        Runnable updatePos;
+        if (nodeOrObj instanceof Node node) {
+             updatePos = () -> {
+                double worldX, worldY;
+                if (node instanceof Circle portCircle) {
+                    worldX = portCircle.getCenterX() + portCircle.getTranslateX();
+                    worldY = portCircle.getCenterY() + portCircle.getTranslateY();
+                } else {
+                    worldX = node.getLayoutX() + node.getTranslateX();
+                    worldY = node.getLayoutY() + node.getTranslateY();
+                }
+                if (xIdx < polyline.getPoints().size()) {
+                    polyline.getPoints().set(xIdx, worldX);
+                    polyline.getPoints().set(yIdx, worldY);
+                }
+            };
+            node.translateXProperty().addListener((obs, oldV, newV) -> updatePos.run());
+            node.translateYProperty().addListener((obs, oldV, newV) -> updatePos.run());
+            if (node instanceof Circle c) {
+                c.centerXProperty().addListener((obs, oldV, newV) -> updatePos.run());
+                c.centerYProperty().addListener((obs, oldV, newV) -> updatePos.run());
             }
+        } else if (nodeOrObj instanceof FmcObject fmc) {
+            updatePos = () -> {
+                if (xIdx < polyline.getPoints().size()) {
+                    polyline.getPoints().set(xIdx, fmc.getX());
+                    polyline.getPoints().set(yIdx, fmc.getY());
+                }
+            };
+            fmc.xProperty().addListener((obs, oldV, newV) -> updatePos.run());
+            fmc.yProperty().addListener((obs, oldV, newV) -> updatePos.run());
+        } else return;
 
-            if (xIdx < polyline.getPoints().size()) {
-                polyline.getPoints().set(xIdx, worldX);
-                polyline.getPoints().set(yIdx, worldY);
-            }
-        };
-
-        // WICHTIG: Wir binden an alle Properties, die die Weltposition beeinflussen
-        node.translateXProperty().addListener((obs, oldV, newV) -> updatePos.run());
-        node.translateYProperty().addListener((obs, oldV, newV) -> updatePos.run());
-
-        if (node instanceof Circle c) {
-            // Falls sich der Port selbst auf dem Shape verschiebt (z.B. durch Resize)
-            c.centerXProperty().addListener((obs, oldV, newV) -> updatePos.run());
-            c.centerYProperty().addListener((obs, oldV, newV) -> updatePos.run());
-        }
-
-        updatePos.run(); // Sofortige Initialisierung beim Start
+        updatePos.run();
     }
 
     private void finishConnection(Node endPort, StateContext context) {
-        // IDs aus den Ports extrahieren
         UUID sourceId = (UUID) startPort.getProperties().get("fmc_id");
         UUID targetId = (UUID) endPort.getProperties().get("fmc_id");
 
-        // Port-Offsets extrahieren
         Port sPortData = (Port) startPort.getProperties().get("port_data");
         Port tPortData = (Port) endPort.getProperties().get("port_data");
 
-        // Wir berechnen die Offsets relativ zur TRANSLATION des Owners (die Translation entspricht der Modell-Position)
         double soX = sPortData.position().getX() - sPortData.owner().getTranslateX();
         double soY = sPortData.position().getY() - sPortData.owner().getTranslateY();
         double toX = tPortData.position().getX() - tPortData.owner().getTranslateX();
         double toY = tPortData.position().getY() - tPortData.owner().getTranslateY();
 
         try {
-            // Neues Verbindungs-Modell erstellen und registrieren
             graph.core.model.Connection conn = new graph.core.model.Connection(sourceId, soX, soY, targetId, toX, toY);
-
-            // Wegpunkte übertragen
-            ObservableList<Double> pts = polyline.getPoints();
-            for (int i = 2; i < pts.size() - 2; i++) {
-                conn.getWaypoints().add(pts.get(i));
-            }
-
+            conn.getWaypointIds().addAll(this.waypointIds);
             context.getRegistry().addConnection(conn);
         } catch (IllegalArgumentException e) {
             System.err.println("Verbindung abgelehnt: " + e.getMessage());
