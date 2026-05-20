@@ -25,7 +25,7 @@ public class IdleCircleState implements EditorState {
             context.setCurrentState(new MoveState(c, mouseInWorld.getX(), mouseInWorld.getY(), this));
         } else {
             FmcObject circle = new FmcObject(FmcType.KREIS, mouseInWorld.getX(), mouseInWorld.getY());
-            context.getRegistry().addObject(circle);
+            context.getCommandHistory().executeCommand(new graph.core.command.AddObjectCommand(context.getRegistry(), circle));
         }
     }
 

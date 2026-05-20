@@ -13,6 +13,8 @@ public interface StateContext {
     SelectionManager getSelectionManager();
     boolean isSnapToGridEnabled();
     graph.core.model.CoreRegistry getRegistry();
+    graph.core.command.CommandHistory getCommandHistory();
+    void refreshPorts();
 
     default Point2D getMouseInWorld(MouseEvent event) {
         return getDrawingPane().getMouseInWorld(event.getSceneX(), event.getSceneY());

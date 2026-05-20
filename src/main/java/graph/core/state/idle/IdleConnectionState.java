@@ -41,45 +41,13 @@ public class IdleConnectionState implements EditorState {
             // Der SelectionManager kümmert sich um das Hinzufügen/Entfernen
             sm.toggleSelection(clickedShape);
             // Danach zeichnen wir die Ports für alle aktuell selektierten Objekte neu
-            refreshPorts(context);
+            context.refreshPorts();
         }
         // 4. Priorität: Klick ins Leere -> Alles abwählen
         else if (target == context.getDrawingPane()) {
             sm.clearSelection();
-            refreshPorts(context);
+            context.refreshPorts();
         }
-    }
-
-    private void refreshPorts(StateContext context) {
-        context.getDrawingPane().getUiLayer().getChildren().clear();
-
-        for (Node selectedNode : context.getSelectionManager().getSelectedNodes()) {
-
-            List<Port> ports = PortCalculator.getPortsForNode(selectedNode);
-            for (Port p : ports) {
-                Circle portCircle = createPortCircle(p, selectedNode);
-                context.getDrawingPane().addNode(portCircle);
-            }
-        }
-    }
-
-    private Circle createPortCircle(Port p, Node selectedNode) {
-        // 1. Optik: Ein kleiner gelber Kreis
-        Circle portCircle = new Circle(6, Color.YELLOW);
-        portCircle.setStroke(Color.GOLDENROD);
-        portCircle.setStrokeWidth(1.5);
-
-        portCircle.setCenterX(p.position().getX() - selectedNode.getTranslateX());
-        portCircle.setCenterY(p.position().getY() - selectedNode.getTranslateY());
-
-        portCircle.translateXProperty().bind(selectedNode.translateXProperty());
-        portCircle.translateYProperty().bind(selectedNode.translateYProperty());
-
-        portCircle.getProperties().put("is_port", true);
-        portCircle.getProperties().put("fmc_id", selectedNode.getProperties().get("fmc_id"));
-        portCircle.getProperties().put("port_data", p);
-
-        return portCircle;
     }
 
     private boolean isPort(Node node) {

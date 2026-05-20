@@ -118,6 +118,7 @@ public class ViewMapper {
             });
         }
 
+        polyline.getProperties().put("fmc_id", conn.getId());
         nodeMap.put(conn.getId(), polyline);
         view.addNode(polyline);
     }

@@ -25,7 +25,7 @@ public class IdleRectangleState implements EditorState {
             context.setCurrentState(new MoveState(rect, mouseInWorld.getX(), mouseInWorld.getY(), this));
         } else if (event.getTarget() == context.getDrawingPane()) {
             FmcObject rectObj = new FmcObject(FmcType.QUADRAT, mouseInWorld.getX(), mouseInWorld.getY());
-            context.getRegistry().addObject(rectObj);
+            context.getCommandHistory().executeCommand(new graph.core.command.AddObjectCommand(context.getRegistry(), rectObj));
         }
     }
 

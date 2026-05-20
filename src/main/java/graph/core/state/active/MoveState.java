@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import java.util.UUID;
 
 public class MoveState implements EditorState {
     private final Node nodeToMove;
@@ -17,9 +18,15 @@ public class MoveState implements EditorState {
     private double mouseOffsetX;
     private double mouseOffsetY;
 
+    // Startkoordinaten für das Move-Befehlsmuster
+    private final double oldX;
+    private final double oldY;
+
     public MoveState(Node node, double startWorldX, double startWorldY, EditorState origin) {
         this.nodeToMove = node;
         this.originState = origin;
+        this.oldX = node.getTranslateX();
+        this.oldY = node.getTranslateY();
 
         // Wir berechnen den Abstand zwischen Maus und der Mitte des Shapes
         Point2D center = getCenter(node);
@@ -53,6 +60,14 @@ public class MoveState implements EditorState {
 
     @Override
     public void handleMouseReleased(MouseEvent event, StateContext context) {
+        double newX = nodeToMove.getTranslateX();
+        double newY = nodeToMove.getTranslateY();
+        if (newX != oldX || newY != oldY) {
+            UUID id = (UUID) nodeToMove.getProperties().get("fmc_id");
+            if (id != null) {
+                context.getCommandHistory().executeCommand(new graph.core.command.MoveObjectCommand(context.getRegistry(), id, oldX, oldY, newX, newY));
+            }
+        }
         context.setCurrentState(originState);
     }
 

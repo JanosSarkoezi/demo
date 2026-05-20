@@ -159,9 +159,13 @@ public class ConnectionState implements EditorState {
         try {
             graph.core.model.Connection conn = new graph.core.model.Connection(sourceId, soX, soY, targetId, toX, toY);
             conn.getWaypointIds().addAll(this.waypointIds);
-            context.getRegistry().addConnection(conn);
+            context.getCommandHistory().executeCommand(new graph.core.command.ConnectObjectsCommand(context.getRegistry(), conn));
         } catch (IllegalArgumentException e) {
             System.err.println("Verbindung abgelehnt: " + e.getMessage());
+            // Lösche die verwaisten Wegpunkte aus der Registry
+            for (UUID wpId : this.waypointIds) {
+                context.getRegistry().removeObject(wpId);
+            }
         }
 
         context.getDrawingPane().removeNode(polyline);
